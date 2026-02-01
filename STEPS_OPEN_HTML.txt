@@ -1,0 +1,152 @@
+DEBT EMPIRE v3.2 — STEPS TO OPEN (HTML ONLY — NO POWERSHELL)
+=============================================================
+
+RECOMMENDED (BEST)
+------------------
+  http://localhost:8080/verifier_with_upload_v3.2.html
+  → Use this as your main dashboard. Same data (localStorage.debtEmpireLoans).
+
+
+HOW TO USE THIS WEB APP — AFTER CLOSING AND OPENING YOUR PC
+------------------------------------------------------------
+  Your loan data is saved in the browser (localStorage). When you open the PC again, use ONE of these:
+
+  OPTION A — WITHOUT SERVER (simplest, no PowerShell):
+    1. Open your PC and open Chrome or Edge (same browser you used before).
+    2. Open File Explorer.
+    3. In the address bar paste: c:\Users\MYPC\Desktop\debt-arbitrage\debt-empire
+    4. Double-click: verifier_with_upload_v3.2.html  (or senior_arbitrage_manager.html)
+    5. The app opens. Your loans are still there (same browser = same data).
+    → To open the app next time: repeat steps 2–4. No server needed.
+
+  OPTION B — WITH SERVER (if you use http://localhost:8080/...):
+    1. Open your PC and open Chrome or Edge (same browser you used before).
+    2. Open PowerShell.
+    3. Run: cd c:\Users\MYPC\Desktop\debt-arbitrage\debt-empire
+    4. Run: python -m http.server 8080
+    5. In the browser ADDRESS BAR (not Google search) type: http://localhost:8080/verifier_with_upload_v3.2.html
+       Or for Senior Manager: http://localhost:8080/senior_arbitrage_manager.html
+    6. Press Enter. The app opens. Your loans are still there.
+    → To open the app next time: repeat steps 2–6. Start the server first (steps 2–4).
+
+  IMPORTANT:
+  • Use the SAME way every time: either always “double-click file” OR always “localhost:8080”. Data is stored per “origin” (file vs localhost), so if you switch, you may see 0 loans until you use the same way again.
+  • Use the SAME browser (e.g. Chrome). Data is per browser; loans won’t show in a different browser.
+  • Put the URL in the browser’s ADDRESS BAR (top of window), not in the Google search box.
+
+OPEN IN BROWSER — NO POWERSHELL
+-------------------------------
+Option A (double-click):
+  1. Open File Explorer.
+  2. Go to folder: Desktop\debt-arbitrage\debt-empire
+  3. Double-click one of:
+       verifier_with_upload_v3.2.html   ← RECOMMENDED (best)
+       senior_arbitrage_manager.html
+  → Opens in your default browser (Chrome/Edge). No PowerShell.
+
+Option B (from browser):
+  1. Open Chrome or Edge.
+  2. Press Ctrl+O (File → Open file).
+  3. Go to: Desktop\debt-arbitrage\debt-empire
+  4. Select verifier_with_upload_v3.2.html or senior_arbitrage_manager.html → Open.
+
+Option C (drag into browser):
+  1. Open Chrome or Edge.
+  2. Drag the .html file from the folder into the browser window.
+
+QUICK PATH — OPEN FOLDER
+------------------------
+  Copy into File Explorer address bar:
+  c:\Users\MYPC\Desktop\debt-arbitrage\debt-empire
+  Then double-click the HTML file you want (no PowerShell).
+
+
+STEPS TO OPEN senior_arbitrage_manager.html (HTML ONLY — NO POWERSHELL)
+-----------------------------------------------------------------------
+  1. Open File Explorer.
+  2. In the address bar, paste: c:\Users\MYPC\Desktop\debt-arbitrage\debt-empire
+  3. Double-click: senior_arbitrage_manager.html
+  → Opens in Chrome/Edge. No PowerShell, no server.
+
+  Or: Open Chrome/Edge → Ctrl+O (Open file) → go to the debt-empire folder → select senior_arbitrage_manager.html → Open.
+
+  What you see: 3 tabs — DOCUMENT EXTRACTOR | LOAN VERIFIER | DEBT MANAGER. Use as is (already good).
+
+
+SAVE YOUR SUCCESS (backup + restore)
+------------------------------------
+  Backup file created for you: senior_arbitrage_manager_working_backup.html
+  (Same folder as senior_arbitrage_manager.html. Do not edit the backup.)
+
+  To open success: Run server → http://localhost:8080/senior_arbitrage_manager.html
+
+  If you mess up the main file: Delete senior_arbitrage_manager.html → Copy senior_arbitrage_manager_working_backup.html → Paste → Rename the copy to senior_arbitrage_manager.html
+
+
+OPTIONAL — IF YOU WANT TO RUN A SERVER
+--------------------------------------
+  1. Open PowerShell → cd c:\Users\MYPC\Desktop\debt-arbitrage\debt-empire
+  2. Run: python -m http.server 8080
+  3. In browser go to: http://localhost:8080/verifier_with_upload_v3.2.html  ← BEST
+  (Use this only if you need http:// for PDF.js or other restrictions.)
+
+
+SAVE AS / BROKEN FILE FIX
+-------------------------
+If you use the browser’s “Save As” (Ctrl+S) and the file opens as broken or wrong type:
+
+  1. In the Save As dialog, set the file name to exactly:
+       verifier_with_upload_v3.2.html
+     (No space after .html, no underscore — e.g. not .html_ or “(1)” without .html.)
+
+  2. Set “Save as type” to: “Webpage, HTML only” or “HTML File”.
+
+  3. Or use the in-app link: “💾 Download as .html (correct name)” — that saves a copy with the right name (when using the server at http://localhost:8080/...).
+
+
+DEMO FLOW — ADD A DEMO LOAN AND TRY ALL 3 STEPS
+------------------------------------------------
+
+STEP 1 — DOCUMENT EXTRACTOR (Tab 1)
+  1. Stay on Tab 1: DOCUMENT EXTRACTOR.
+  2. Drag a PDF/DOCX onto the drop zone (or click and pick a file).
+  3. Wait for "Done. Click ➕ ADD TO DASHBOARD or EXTRACT GOOD → NEXT."
+  4. Check/correct the extracted fields (loan name, account, OS, EMI, etc.).
+  5. Either:
+     • Click ➕ ADD TO DASHBOARD → loan is added; go to Tab 3 to see it.
+     • Or click ✅ EXTRACT GOOD → NEXT: VERIFIER → goes to Step 2.
+
+STEP 2 — LOAN VERIFIER (Tab 2)
+  1. Tab 2 shows existing loans in the dropdown and "+ NEW LOAN."
+  2. Select "+ NEW LOAN" (or an existing loan to edit).
+  3. Fill/verify: Loan Name, Account Number (required), Borrower, OS, EMI, Disbursal, Loan Type.
+  4. Click ✅ SAVE LOAN.
+  5. Account is required; if empty you get: "⚠️ Account number required. Check document header."
+  6. After save: "✅ Loan xxx saved! Run 'py empire.py' to refresh dashboard."
+  7. Tab 3 list and main dashboard refresh automatically.
+
+STEP 3 — DEBT MANAGER (Tab 3)
+  1. Tab 3 shows active loans list (name, account, OS, EMI, docs count).
+  2. Select a loan from the dropdown to attach new docs (drag zone + doc type buttons).
+  3. Live summary shows: "✅ X loans active | Total Exposure: ₹Y."
+  4. Click OPEN FULL DASHBOARD to open verifier.html in a new tab (optional).
+  5. Run py empire.py in PowerShell only if you want to update an external dashboard file.
+
+
+CONSOLE (optional)
+-----------------
+  console.table(window.loans);   // See dynamic loans array
+  window.saveLoans();            // Persist to localStorage (key: debtEmpireLoans)
+
+
+NOTE
+----
+All loans are dynamic from localStorage (key: debtEmpireLoans). No hardcoded loan data.
+You can add a demo loan via Tab 1 (Extract + ADD) or Tab 2 (+ NEW LOAN + SAVE), then edit/remove later.
+
+
+Optional tools page
+-------------------
+  tools.html is a standalone "Financial Tools" page (EMI calculator, position in loan, OTS 70/30, ratio checker).
+  It does NOT use localStorage or your loan data. Open it from the same folder (double-click tools.html or
+  http://localhost:8080/tools.html if using the server). Independent of the main app.

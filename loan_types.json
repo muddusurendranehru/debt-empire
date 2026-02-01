@@ -1,0 +1,69 @@
+{
+  "loan_types": {
+    "personal": {
+      "name": "Personal Loan",
+      "description": "Standard personal loan (unsecured)",
+      "ots_rule": "RBI 70% standard",
+      "required_fields": ["provider", "account_number", "outstanding_principal", "emi_amount"],
+      "optional_fields": ["tenure_remaining_months", "interest_rate", "borrower_name"]
+    },
+    "lap": {
+      "name": "Loan Against Property",
+      "description": "Secured loan against property",
+      "ots_rule": "RBI 70% standard",
+      "required_fields": ["provider", "account_number", "outstanding_principal", "emi_amount"],
+      "optional_fields": ["property_address", "tenure_remaining_months", "interest_rate"]
+    },
+    "flexi": {
+      "name": "Flexi Loan / Revolving Credit",
+      "description": "Revolving credit facility (e.g. Bajaj Flexi)",
+      "ots_rule": "Special RBI rules (may vary)",
+      "required_fields": ["provider", "account_number", "outstanding_principal"],
+      "optional_fields": ["linked_account", "credit_limit", "utilization_percent"],
+      "special_notes": "May have linked accounts (e.g. 400DFR47319474 → 400LAP14914207)"
+    },
+    "home": {
+      "name": "Home Loan",
+      "description": "Home loan / mortgage",
+      "ots_rule": "Usually continue (not OTS target)",
+      "required_fields": ["provider", "account_number", "outstanding_principal", "emi_amount"],
+      "optional_fields": ["property_address", "tenure_remaining_months", "interest_rate"]
+    },
+    "od": {
+      "name": "Overdraft / Business OD",
+      "description": "Overdraft facility or business line of credit",
+      "ots_rule": "Negotiation-based (no standard rule)",
+      "required_fields": ["provider", "account_number", "outstanding_principal"],
+      "optional_fields": ["credit_limit", "utilization_percent", "interest_rate"]
+    }
+  },
+  "status_types": {
+    "CLOSED": {
+      "description": "Loan fully settled (OS = 0)",
+      "exclude_from_ots": true,
+      "archive_eligible": true
+    },
+    "PARTIAL": {
+      "description": "Partially paid / prepaid",
+      "exclude_from_ots": false,
+      "archive_eligible": false
+    },
+    "NEW_DISBURSED": {
+      "description": "Not yet received / OS = 0 hold",
+      "exclude_from_ots": true,
+      "archive_eligible": false
+    },
+    "RUNNING_PAID_EMI": {
+      "description": "Active; EMI being paid",
+      "exclude_from_ots": false,
+      "archive_eligible": false
+    },
+    "NEGOTIATING": {
+      "description": "OTS offer sent / negotiation in progress",
+      "exclude_from_ots": false,
+      "archive_eligible": false
+    }
+  },
+  "schema_version": "2.0",
+  "last_updated": "2026-01-29"
+}

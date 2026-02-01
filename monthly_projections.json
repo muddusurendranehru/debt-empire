@@ -1,0 +1,324 @@
+[
+  {
+    "Month": 1,
+    "Date": "2024-04-03",
+    "Provider": "L&T",
+    "EMI_Amount": 80000,
+    "Balance_Remaining": 2494000
+  },
+  {
+    "Month": 2,
+    "Date": "2024-05-03",
+    "Provider": "L&T",
+    "EMI_Amount": 80000,
+    "Balance_Remaining": 2414000
+  },
+  {
+    "Month": 3,
+    "Date": "2024-06-02",
+    "Provider": "L&T",
+    "EMI_Amount": 80000,
+    "Balance_Remaining": 2334000
+  },
+  {
+    "Month": 4,
+    "Date": "2024-07-02",
+    "Provider": "L&T",
+    "EMI_Amount": 80000,
+    "Balance_Remaining": 2254000
+  },
+  {
+    "Month": 5,
+    "Date": "2024-08-01",
+    "Provider": "L&T",
+    "EMI_Amount": 80000,
+    "Balance_Remaining": 2174000
+  },
+  {
+    "Month": 6,
+    "Date": "2024-08-31",
+    "Provider": "L&T",
+    "EMI_Amount": 80000,
+    "Balance_Remaining": 2094000
+  },
+  {
+    "Month": 7,
+    "Date": "2024-09-30",
+    "Provider": "L&T",
+    "EMI_Amount": 80000,
+    "Balance_Remaining": 2014000
+  },
+  {
+    "Month": 8,
+    "Date": "2024-10-30",
+    "Provider": "L&T",
+    "EMI_Amount": 80000,
+    "Balance_Remaining": 1934000
+  },
+  {
+    "Month": 9,
+    "Date": "2024-11-29",
+    "Provider": "L&T",
+    "EMI_Amount": 80000,
+    "Balance_Remaining": 1854000
+  },
+  {
+    "Month": 10,
+    "Date": "2024-12-29",
+    "Provider": "L&T",
+    "EMI_Amount": 80000,
+    "Balance_Remaining": 1774000
+  },
+  {
+    "Month": 11,
+    "Date": "2025-01-28",
+    "Provider": "L&T",
+    "EMI_Amount": 80000,
+    "Balance_Remaining": 1694000
+  },
+  {
+    "Month": 12,
+    "Date": "2025-02-27",
+    "Provider": "L&T",
+    "EMI_Amount": 80000,
+    "Balance_Remaining": 1614000
+  },
+  {
+    "Month": 13,
+    "Date": "2025-03-29",
+    "Provider": "L&T",
+    "EMI_Amount": 80000,
+    "Balance_Remaining": 1534000
+  },
+  {
+    "Month": 14,
+    "Date": "2025-04-28",
+    "Provider": "L&T",
+    "EMI_Amount": 80000,
+    "Balance_Remaining": 1454000
+  },
+  {
+    "Month": 15,
+    "Date": "2025-05-28",
+    "Provider": "L&T",
+    "EMI_Amount": 80000,
+    "Balance_Remaining": 1374000
+  },
+  {
+    "Month": 16,
+    "Date": "2025-06-27",
+    "Provider": "L&T",
+    "EMI_Amount": 80000,
+    "Balance_Remaining": 1294000
+  },
+  {
+    "Month": 17,
+    "Date": "2025-07-27",
+    "Provider": "L&T",
+    "EMI_Amount": 80000,
+    "Balance_Remaining": 1214000
+  },
+  {
+    "Month": 18,
+    "Date": "2025-08-26",
+    "Provider": "L&T",
+    "EMI_Amount": 80000,
+    "Balance_Remaining": 1134000
+  },
+  {
+    "Month": 19,
+    "Date": "2025-09-25",
+    "Provider": "L&T",
+    "EMI_Amount": 80000,
+    "Balance_Remaining": 1054000
+  },
+  {
+    "Month": 20,
+    "Date": "2025-10-25",
+    "Provider": "L&T",
+    "EMI_Amount": 80000,
+    "Balance_Remaining": 974000
+  },
+  {
+    "Month": 21,
+    "Date": "2025-11-24",
+    "Provider": "L&T",
+    "EMI_Amount": 80000,
+    "Balance_Remaining": 894000
+  },
+  {
+    "Month": 22,
+    "Date": "2025-12-24",
+    "Provider": "L&T",
+    "EMI_Amount": 80000,
+    "Balance_Remaining": 814000
+  },
+  {
+    "Month": 23,
+    "Date": "2026-01-23",
+    "Provider": "L&T",
+    "EMI_Amount": 80000,
+    "Balance_Remaining": 734000
+  },
+  {
+    "Month": 24,
+    "Date": "2026-02-22",
+    "Provider": "L&T",
+    "EMI_Amount": 80000,
+    "Balance_Remaining": 654000
+  },
+  {
+    "Month": 25,
+    "Date": "2026-03-24",
+    "Provider": "L&T",
+    "EMI_Amount": 80000,
+    "Balance_Remaining": 574000
+  },
+  {
+    "Month": 26,
+    "Date": "2026-04-23",
+    "Provider": "L&T",
+    "EMI_Amount": 80000,
+    "Balance_Remaining": 494000
+  },
+  {
+    "Month": 27,
+    "Date": "2026-05-23",
+    "Provider": "L&T",
+    "EMI_Amount": 80000,
+    "Balance_Remaining": 414000
+  },
+  {
+    "Month": 28,
+    "Date": "2026-06-22",
+    "Provider": "L&T",
+    "EMI_Amount": 80000,
+    "Balance_Remaining": 334000
+  },
+  {
+    "Month": 29,
+    "Date": "2026-07-22",
+    "Provider": "L&T",
+    "EMI_Amount": 80000,
+    "Balance_Remaining": 254000
+  },
+  {
+    "Month": 30,
+    "Date": "2026-08-21",
+    "Provider": "L&T",
+    "EMI_Amount": 80000,
+    "Balance_Remaining": 174000
+  },
+  {
+    "Month": 31,
+    "Date": "2026-09-20",
+    "Provider": "L&T",
+    "EMI_Amount": 80000,
+    "Balance_Remaining": 94000
+  },
+  {
+    "Month": 32,
+    "Date": "2026-10-20",
+    "Provider": "L&T",
+    "EMI_Amount": 80000,
+    "Balance_Remaining": 14000
+  },
+  {
+    "Month": 33,
+    "Date": "2026-11-19",
+    "Provider": "L&T",
+    "EMI_Amount": 14000,
+    "Balance_Remaining": 0
+  },
+  {
+    "Month": 1,
+    "Date": "2024-04-05",
+    "Provider": "HDFC",
+    "EMI_Amount": 189000,
+    "Balance_Remaining": 2261000
+  },
+  {
+    "Month": 2,
+    "Date": "2024-05-05",
+    "Provider": "HDFC",
+    "EMI_Amount": 189000,
+    "Balance_Remaining": 2072000
+  },
+  {
+    "Month": 3,
+    "Date": "2024-06-04",
+    "Provider": "HDFC",
+    "EMI_Amount": 189000,
+    "Balance_Remaining": 1883000
+  },
+  {
+    "Month": 4,
+    "Date": "2024-07-04",
+    "Provider": "HDFC",
+    "EMI_Amount": 189000,
+    "Balance_Remaining": 1694000
+  },
+  {
+    "Month": 5,
+    "Date": "2024-08-03",
+    "Provider": "HDFC",
+    "EMI_Amount": 189000,
+    "Balance_Remaining": 1505000
+  },
+  {
+    "Month": 6,
+    "Date": "2024-09-02",
+    "Provider": "HDFC",
+    "EMI_Amount": 189000,
+    "Balance_Remaining": 1316000
+  },
+  {
+    "Month": 7,
+    "Date": "2024-10-02",
+    "Provider": "HDFC",
+    "EMI_Amount": 189000,
+    "Balance_Remaining": 1127000
+  },
+  {
+    "Month": 8,
+    "Date": "2024-11-01",
+    "Provider": "HDFC",
+    "EMI_Amount": 189000,
+    "Balance_Remaining": 938000
+  },
+  {
+    "Month": 9,
+    "Date": "2024-12-01",
+    "Provider": "HDFC",
+    "EMI_Amount": 189000,
+    "Balance_Remaining": 749000
+  },
+  {
+    "Month": 10,
+    "Date": "2024-12-31",
+    "Provider": "HDFC",
+    "EMI_Amount": 189000,
+    "Balance_Remaining": 560000
+  },
+  {
+    "Month": 11,
+    "Date": "2025-01-30",
+    "Provider": "HDFC",
+    "EMI_Amount": 189000,
+    "Balance_Remaining": 371000
+  },
+  {
+    "Month": 12,
+    "Date": "2025-03-01",
+    "Provider": "HDFC",
+    "EMI_Amount": 189000,
+    "Balance_Remaining": 182000
+  },
+  {
+    "Month": 13,
+    "Date": "2025-03-31",
+    "Provider": "HDFC",
+    "EMI_Amount": 182000,
+    "Balance_Remaining": 0
+  }
+]

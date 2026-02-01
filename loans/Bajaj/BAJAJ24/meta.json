@@ -1,0 +1,13 @@
+{
+  "provider": "Bajaj",
+  "product": "",
+  "account_number": "BAJAJ24",
+  "linked_account": "",
+  "borrower_name": "",
+  "outstanding_principal": 790000,
+  "emi_amount": 35000,
+  "tenure_remaining_months": 23,
+  "loan_type": "personal",
+  "verification_status": "pending",
+  "updated_at": "2026-01-29T15:26:26.534864"
+}

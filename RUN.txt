@@ -1,0 +1,39 @@
+QUICK START - DEBT EMPIRE ANALYZER
+===================================
+
+CORRECT COMMAND:
+  py empire.py
+
+NOT:
+  py debt_empire.py  (file doesn't exist)
+
+FULL COMMAND:
+  cd C:\Users\MYPC\Desktop\debt-arbitrage\debt-empire
+  py empire.py
+
+OUTPUT FILES:
+  • masters.json
+  • dashboard.html
+  • monthly projections.csv
+  • ots-pdfs/*.txt
+
+
+============================================
+MANUAL START — SERVER + OPEN HTML (copy-paste)
+============================================
+
+1) COMPLETE FOLDER PATH (paste in File Explorer address bar):
+   C:\Users\MYPC\Desktop\debt-arbitrage\debt-empire
+
+2) START SERVER (PowerShell — run these two lines one after the other):
+   cd C:\Users\MYPC\Desktop\debt-arbitrage\debt-empire
+   python -m http.server 8080
+   (Leave this window open. When you see "Serving HTTP on ...", server is running.)
+
+3) OPEN HTML IN BROWSER — put this in the browser ADDRESS BAR (not Google search):
+   http://localhost:8080/senior_arbitrage_manager.html
+   (Or for verifier: http://localhost:8080/verifier_with_upload_v3.2.html)
+
+4) OPEN HTML WITHOUT SERVER (double-click file):
+   C:\Users\MYPC\Desktop\debt-arbitrage\debt-empire\senior_arbitrage_manager.html
+   (Or: verifier_with_upload_v3.2.html in the same folder)

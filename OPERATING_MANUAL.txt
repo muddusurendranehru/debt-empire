@@ -1,0 +1,31 @@
+DEBT EMPIRE — OPERATING MANUAL (FOR CLINIC STAFF)
+==================================================
+
+OPENING THE APP:
+  Option A (Simplest): Double-click senior_arbitrage_manager.html
+  Option B (Recommended): 
+      1. PowerShell: cd "C:\Users\MYPC\Desktop\debt-arbitrage\debt-empire"
+      2. Run: python -m http.server 8080
+      3. Browser: http://localhost:8080/senior_arbitrage_manager.html
+
+ADDING NEW LOAN:
+  1. Extractor tab → Drag document
+  2. Fill ONLY: Account Number + Current OS (₹)
+  3. Click "EXTRACT GOOD → NEXT: VERIFIER"
+  4. If modal appears → Choose carefully:
+        🔗 USE EXISTING → Add details to existing loan
+        ➕ CREATE NEW → Keep as separate loan
+  5. Verifier tab → Click 🖨️ → Save as PDF → Email to lender
+
+PRINTING FOR LENDER:
+  → Manager tab → Find loan → Click 🖨️ → Ctrl+P → "Save as PDF"
+  → Lender sees ONLY their loan details (no other accounts)
+
+MONTHLY BACKUP:
+  → Manager tab → "⬇️ Export Loans as CSV" → Save to records folder
+  → THIS IS YOUR PRIVATE BACKUP (never share full CSV with lenders)
+
+IMPORTANT:
+  • Always use SAME METHOD to open app (file vs localhost)
+  • Never attach full CSV to lender emails (only 1 loan per email)
+  • Print button = lender communication | CSV = your private backup

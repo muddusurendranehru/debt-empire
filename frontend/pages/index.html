@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debt Empire - Loan Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+            max-width: 1200px;
+            margin: auto;
+        }
+        .loan {
+            border: 1px solid #ddd;
+            margin: 10px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        h2 {
+            margin-top: 0;
+            color: #555;
+        }
+        .paid, .balance {
+            font-weight: bold;
+            color: #28a745;
+        }
+        .outstanding {
+            font-weight: bold;
+            color: #dc3545;
+        }
+        .files {
+            list-style: none;
+            padding: 0;
+            margin: 10px 0;
+        }
+        .files li {
+            padding: 5px 0;
+            color: #666;
+        }
+        .files li:before {
+            content: "📄 ";
+        }
+        .summary {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .summary-item {
+            display: inline-block;
+            margin: 0 20px 10px 0;
+            font-weight: bold;
+        }
+        .upload-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 2px dashed #ccc;
+        }
+        .upload-section input[type="file"] {
+            margin: 10px 0;
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status.active {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status.pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .status.closed {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <h1>🚀 Debt Empire - Loan Tracker</h1>
+
+    <div class="upload-section">
+        <h2>Upload LoanLens CSV</h2>
+        <input type="file" id="csvFile" accept=".csv">
+        <input type="text" id="monthName" placeholder="Month (e.g., feb26)" style="margin: 10px; padding: 8px;">
+        <button class="btn" onclick="uploadCSV()">Process Monthly Ritual</button>
+        <div id="uploadStatus" style="margin-top: 10px;"></div>
+    </div>
+
+    <div class="summary" id="summary">
+        <h2>Portfolio Summary</h2>
+        <div class="summary-item">Total Loans: <span id="totalLoans">0</span></div>
+        <div class="summary-item">Total Outstanding: <span id="totalOutstanding">Rs 0</span></div>
+        <div class="summary-item">Total Monthly EMI: <span id="totalEMI">Rs 0</span></div>
+    </div>
+
+    <div id="loansContainer">
+        <!-- Loans will be loaded here -->
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000';
+
+        // Load masters on page load
+        window.onload = function() {
+            loadMasters();
+        };
+
+        async function loadMasters() {
+            try {
+                const response = await fetch(`${API_URL}/api/masters`);
+                const data = await response.json();
+                displayMasters(data);
+            } catch (error) {
+                console.error('Error loading masters:', error);
+                document.getElementById('loansContainer').innerHTML = 
+                    '<p style="color: red;">Error loading data. Make sure backend is running on port 8000.</p>';
+            }
+        }
+
+        function displayMasters(masters) {
+            // Update summary
+            const loans = masters.loans || {};
+            const loanCount = Object.keys(loans).length;
+            document.getElementById('totalLoans').textContent = loanCount;
+            
+            const totalOutstanding = masters.total_outstanding || 0;
+            const totalEMI = masters.total_emi || 0;
+            
+            document.getElementById('totalOutstanding').textContent = formatCurrency(totalOutstanding);
+            document.getElementById('totalEMI').textContent = formatCurrency(totalEMI);
+
+            // Display loans
+            const container = document.getElementById('loansContainer');
+            if (loanCount === 0) {
+                container.innerHTML = '<p>No loans found. Upload a CSV to get started.</p>';
+                return;
+            }
+
+            let html = '';
+            for (const [key, loan] of Object.entries(loans)) {
+                html += `
+                    <div class="loan">
+                        <h2>${loan.lender} - ${loan.loan_id}</h2>
+                        <p><strong>Sanction Date:</strong> ${loan.sanction_date}</p>
+                        <p><strong>Outstanding:</strong> <span class="outstanding">${formatCurrency(loan.outstanding)}</span></p>
+                        <p><strong>EMI:</strong> Rs ${(loan.emi / 1000).toFixed(0)}k</p>
+                        <p><strong>Rate:</strong> ${loan.rate}%</p>
+                        <p><strong>Remaining:</strong> ${loan.remaining}/${loan.tenure_months} months</p>
+                        <p><strong>Status:</strong> <span class="status active">Active</span></p>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+        }
+
+        async function uploadCSV() {
+            const fileInput = document.getElementById('csvFile');
+            const monthInput = document.getElementById('monthName');
+            const statusDiv = document.getElementById('uploadStatus');
+
+            if (!fileInput.files[0]) {
+                statusDiv.innerHTML = '<p style="color: red;">Please select a CSV file.</p>';
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            
+            const monthName = monthInput.value || new Date().toLocaleDateString('en-US', { month: 'short', year: '2-digit' }).toLowerCase();
+            
+            statusDiv.innerHTML = '<p>Processing...</p>';
+
+            try {
+                const response = await fetch(`${API_URL}/api/upload-csv?month_name=${monthName}`, {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    statusDiv.innerHTML = `<p style="color: green;">Success! Parsed ${result.loans_parsed} loans.</p>`;
+                    loadMasters(); // Reload data
+                } else {
+                    statusDiv.innerHTML = `<p style="color: red;">Error: ${result.detail || result.error || 'Upload failed'}</p>`;
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+
+        function formatCurrency(amount) {
+            if (!amount) return 'Rs 0';
+            const lakhs = amount / 100000;
+            return `Rs ${lakhs.toFixed(2)}L`;
+        }
+    </script>
+</body>
+</html>

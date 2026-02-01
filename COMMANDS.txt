@@ -1,0 +1,50 @@
+================================================================================
+DEBT EMPIRE - QUICK COMMAND REFERENCE
+================================================================================
+
+MAIN COMMANDS:
+--------------
+py empire.py                    → Generate all reports (HTML, CSV, JSON)
+py loan_verifier.py             → Add/verify loans interactively
+py build_structure.py           → Auto-create folder-per-loan + archive (v2.0)
+py 8step-ritual.py --empire      → Run 8-step ritual
+
+QUICK SCRIPTS:
+--------------
+.\RUN.ps1                        → Quick run empire.py
+.\OPEN_HTML.ps1                 → Open all HTML files in browser
+.\INSTALL_NOW.ps1               → Install dependencies (optional)
+
+VIEW FILES:
+--------------
+start verifier.html              → Open loan verifier (beautiful table)
+start dashboard.html             → Open main dashboard
+start "monthly projections.html" → Open EMI schedule
+start ots-pdfs\lt-ots.html      → Open L&T OTS letter
+
+GENERATE VERIFIER:
+--------------
+py generate_verifier_html.py    → Generate verifier.html from masters.json
+.\GENERATE_VERIFIER.ps1         → Quick generate + open in browser
+
+TYPICAL WORKFLOW:
+--------------
+1. cd C:\Users\MYPC\Desktop\debt-arbitrage\debt-empire
+2. py loan_verifier.py          → Add/verify loans
+3. py empire.py                 → Generate reports
+4. .\OPEN_HTML.ps1              → View results
+
+OUTPUT FILES:
+--------------
+masters.json                    → Loan master data
+dashboard.html                  → Main dashboard (Ctrl+P to print)
+monthly projections.html        → EMI schedule table
+monthly projections.csv         → Excel-compatible CSV
+ots-pdfs\*.html                 → HTML OTS letters (all lenders)
+ots-pdfs\*.txt                  → Plain text OTS letters
+
+MOST USED:
+--------------
+py empire.py                    → Run this most often!
+
+================================================================================

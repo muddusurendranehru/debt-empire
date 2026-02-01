@@ -1,0 +1,49 @@
+{
+  "loans": [
+    {
+      "provider": "L&T",
+      "outstanding": 2574000,
+      "emi": 80000,
+      "tenure_months": 32,
+      "ots_amount_70pct": 1801800,
+      "savings": 772200,
+      "start_date": "2024-04-03",
+      "account_ref": "BL240910207908339"
+    },
+    {
+      "provider": "HDFC",
+      "outstanding": 2450000,
+      "emi": 189000,
+      "tenure_months": 13,
+      "ots_amount_70pct": 1715000,
+      "savings": 735000,
+      "start_date": "2024-04-05",
+      "account_ref": "HDFC24LOAN1"
+    },
+    {
+      "provider": "Tata",
+      "outstanding": 320000,
+      "emi": 15000,
+      "tenure_months": 21,
+      "ots_amount_70pct": 224000,
+      "savings": 96000,
+      "start_date": "2024-04-10",
+      "account_ref": "TATA24"
+    },
+    {
+      "provider": "Bajaj",
+      "outstanding": 790000,
+      "emi": 35000,
+      "tenure_months": 23,
+      "ots_amount_70pct": 553000,
+      "savings": 237000,
+      "start_date": "2024-04-15",
+      "account_ref": "BAJAJ24"
+    }
+  ],
+  "total_exposure": 6134000,
+  "total_ots_liability": 4293800,
+  "total_savings": 1840200,
+  "rbi_ots_rule": "70% per DBOD.No.Leg.BC.252/09.07.005/2013-14",
+  "generated_at": "2026-01-30T22:08:50.398543"
+}

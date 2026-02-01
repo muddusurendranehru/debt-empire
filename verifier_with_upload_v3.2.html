@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debt Empire v3.2 | EXTRACTOR → VERIFIER → MANAGER</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.0.1/tesseract.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; color: #333; display: flex; min-height: 100vh; }
+        .main-content { flex: 3; padding: 30px; background: white; overflow-y: auto; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h1 { color: #1b5e20; font-size: 28px; margin-bottom: 10px; }
+        .header .subtitle { color: #555; font-size: 16px; }
+        .sidebar { flex: 1; background: #2c3e50; color: white; padding: 16px; overflow-y: auto; }
+        .sidebar h2 { font-size: 16px; margin-bottom: 12px; color: #3498db; text-align: center; }
+        .tabs { display: flex; gap: 4px; margin-bottom: 14px; flex-wrap: wrap; }
+        .tab-btn { flex: 1; min-width: 80px; padding: 8px 10px; border: 1px solid #3498db; background: #34495e; color: white; border-radius: 6px; cursor: pointer; font-size: 12px; }
+        .tab-btn.active { background: #3498db; }
+        .tab-btn:hover { background: #2980b9; }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+        .btn { display: inline-block; padding: 8px 16px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 13px; margin: 4px; }
+        .btn:hover { background: #2980b9; }
+        .btn-success { background: #27ae60; }
+        .btn-success:hover { background: #229954; }
+        .btn-danger { background: #e74c3c; }
+        .drop-zone { border: 3px dashed #3498db; border-radius: 10px; padding: 20px; text-align: center; background: rgba(52, 152, 219, 0.1); cursor: pointer; transition: all 0.3s; margin-bottom: 12px; font-size: 13px; }
+        .drop-zone:hover { background: rgba(52, 152, 219, 0.2); }
+        .drop-zone.drag-over { background: rgba(46, 204, 113, 0.3); border-color: #27ae60; }
+        .extract-table { width: 100%; border-collapse: collapse; font-size: 12px; margin: 12px 0; background: rgba(255,255,255,0.05); border-radius: 6px; overflow: hidden; }
+        .extract-table th, .extract-table td { padding: 8px 10px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .extract-table th { color: #bdc3c7; font-weight: 600; width: 140px; }
+        .extract-table input { width: 100%; padding: 6px 8px; border: 1px solid #3498db; border-radius: 4px; background: #34495e; color: white; font-size: 12px; }
+        .extract-table input.bad-amount { border-color: #e74c3c; }
+        .extract-table input.bad-amount::placeholder { color: #e74c3c; }
+        .extract-status { font-size: 11px; color: #f39c12; margin: 8px 0; }
+        .loan-tree { margin: 20px 0; }
+        .loan-item { padding: 15px; margin: 10px 0; background: #f8f9fa; border-left: 4px solid #3498db; border-radius: 5px; }
+        .loan-item.running { border-left-color: #27ae60; }
+        .loan-item.negotiating { border-left-color: #f39c12; }
+        .loan-item.closed { border-left-color: #95a5a6; }
+        .loan-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .loan-title { font-weight: bold; font-size: 16px; }
+        .loan-badge { padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+        .badge-running { background: #27ae60; color: white; }
+        .badge-negotiating { background: #f39c12; color: white; }
+        .badge-closed { background: #95a5a6; color: white; }
+        .loan-details { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; font-size: 14px; }
+        .detail-item { display: flex; justify-content: space-between; }
+        .detail-label { color: #7f8c8d; }
+        .detail-value { font-weight: bold; }
+        .verifier-form .step { margin-bottom: 10px; }
+        .verifier-form label { display: block; font-size: 11px; color: #bdc3c7; margin-bottom: 2px; }
+        .verifier-form input, .verifier-form select { width: 100%; padding: 6px 8px; border-radius: 4px; border: 1px solid #3498db; background: #34495e; color: white; font-size: 12px; }
+        .verifier-form input.bad-amount { border-color: #e74c3c; }
+        .verifier-form input.bad-amount::placeholder { color: #e74c3c; }
+        .verifier-form .radio-group { display: flex; gap: 12px; margin-top: 4px; }
+        .verifier-form .radio-group label { display: inline; margin-right: 4px; }
+        .manager-slots { font-family: monospace; font-size: 11px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px; margin: 8px 0; }
+        .dup-blocked { background: rgba(231, 76, 60, 0.3); border: 1px solid #e74c3c; border-radius: 6px; padding: 8px; margin: 8px 0; font-size: 11px; display: none; }
+        .dup-blocked.show { display: block; }
+        .doc-type-btn { display: block; width: 100%; text-align: left; padding: 8px 10px; margin-bottom: 4px; background: rgba(255,255,255,0.08); border: 1px solid #3498db; border-radius: 4px; color: white; cursor: pointer; font-size: 11px; }
+        .doc-type-btn:hover { background: rgba(52, 152, 219, 0.25); }
+        .ps-cmd { background: #2d2d2d; color: #f8f8f2; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 10px; white-space: pre-wrap; word-break: break-all; margin: 8px 0; }
+        select.loan-select { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #3498db; background: #34495e; color: white; font-size: 12px; margin-bottom: 8px; }
+        .active-loans-list { margin: 8px 0; font-size: 11px; }
+        .active-loans-list .loan-row { padding: 6px 8px; margin: 4px 0; background: rgba(0,0,0,0.15); border-radius: 4px; }
+        .dashboard-placeholder .btn { margin: 4px 0; }
+        #printLoanSheet { display: none; padding: 20px; font-family: 'Segoe UI', sans-serif; }
+        #printLoanSheet .print-loan-title { font-size: 18px; font-weight: bold; margin-bottom: 12px; }
+        #printLoanSheet .print-loan-detail { margin: 6px 0; }
+        @media print {
+            .sidebar, .no-print, .main-content { display: none !important; }
+            #printLoanSheet { display: block !important; }
+            body { background: white; }
+        }
+        @media (max-width: 768px) { body { flex-direction: column; } .sidebar { order: 2; } .main-content { order: 1; } }
+    </style>
+</head>
+<body>
+    <div class="sidebar no-print">
+        <h2>🤖 DEBT EMPIRE v3.2</h2>
+        <p style="font-size: 11px; color: #bdc3c7; text-align: center; margin-bottom: 10px;">EXTRACTOR → VERIFIER → MANAGER</p>
+        <div class="tabs">
+            <button type="button" class="tab-btn active" data-tab="1">DOCUMENT<br>EXTRACTOR</button>
+            <button type="button" class="tab-btn" data-tab="2">LOAN<br>VERIFIER</button>
+            <button type="button" class="tab-btn" data-tab="3">DEBT<br>MANAGER</button>
+        </div>
+
+        <!-- TAB 1: DOCUMENT EXTRACTOR -->
+        <div id="panel1" class="tab-panel active">
+            <p style="font-size: 11px; margin-bottom: 8px;">🤖 DOCUMENT EXTRACTOR: Upload doc → extract → verify</p>
+            <p style="font-size: 10px; color: #95a5a6; margin-bottom: 8px;">📁 Drag PDF/JPG/DOCX/CSV → Tesseract OCR + pdf.js</p>
+            <div id="extractDropZone" class="drop-zone">
+                <div>📁</div>
+                <p><strong>Drop PDF / JPG / DOCX / CSV here</strong></p>
+                <input type="file" id="extractFileInput" accept=".pdf,.jpg,.jpeg,.png,.docx,.csv" style="display: none;">
+            </div>
+            <div id="extractStatus" class="extract-status"></div>
+            <table class="extract-table" id="extractTable">
+                <tr><th>Loan Name (AI suggested)</th><td><input type="text" id="exLoanName" placeholder="bjmagnarepay1 [auto]"><button type="button" class="btn" style="padding:4px 8px;font-size:11px;" onclick="this.previousElementSibling.focus()">✏️</button></td></tr>
+                <tr><th>Borrower Name</th><td><input type="text" id="exBorrower" placeholder="muddu surendra nehru"><button type="button" class="btn" style="padding:4px 8px;font-size:11px;" onclick="this.previousElementSibling.focus()">✏️</button></td></tr>
+                <tr><th>Account Number</th><td><input type="text" id="exAccount" placeholder="H400FBL0337784"><button type="button" class="btn" style="padding:4px 8px;font-size:11px;" onclick="this.previousElementSibling.focus()">✏️</button></td></tr>
+                <tr><th>Current OS (₹)</th><td><input type="text" id="exOS" placeholder="Enter amount"><button type="button" class="btn" style="padding:4px 8px;font-size:11px;" onclick="this.previousElementSibling.focus()">✏️</button></td></tr>
+                <tr><th>Monthly EMI (₹)</th><td><input type="text" id="exEMI" placeholder="Enter amount"><button type="button" class="btn" style="padding:4px 8px;font-size:11px;" onclick="this.previousElementSibling.focus()">✏️</button></td></tr>
+                <tr><th>Disbursal Date</th><td><input type="text" id="exDisbursal" placeholder="2020-06-17"><button type="button" class="btn" style="padding:4px 8px;font-size:11px;" onclick="this.previousElementSibling.focus()">✏️</button></td></tr>
+                <tr><th>Loan Type</th><td><input type="text" id="exLoanType" placeholder="Flexi LAP"><button type="button" class="btn" style="padding:4px 8px;font-size:11px;" onclick="this.previousElementSibling.focus()">✏️</button></td></tr>
+                <tr><th>Doc Type</th><td><input type="text" id="exDocType" placeholder="EMI Running Statement"><button type="button" class="btn" style="padding:4px 8px;font-size:11px;" onclick="this.previousElementSibling.focus()">✏️</button></td></tr>
+            </table>
+            <button type="button" class="btn btn-success" onclick="extractGoodNext()">✅ EXTRACT GOOD → NEXT: VERIFIER</button>
+            <button type="button" class="btn btn-success" id="extract-btn" onclick="addCurrentExtractToDashboard()">➕ ADD TO DASHBOARD</button>
+            <button type="button" class="btn" onclick="reExtract()">🔄 RE-EXTRACT</button>
+            <button type="button" class="btn" onclick="copyExtractToClipboard()">📋 COPY TO CLIPBOARD</button>
+        </div>
+
+        <!-- TAB 2: LOAN VERIFIER -->
+        <div id="panel2" class="tab-panel">
+            <p style="font-size: 11px; margin-bottom: 8px;">🤖 LOAN VERIFIER: New Loan OR Existing?</p>
+            <label style="font-size: 11px;">EXISTING LOANS (active only):</label>
+            <select id="verifierLoanSelect" class="loan-select">
+                <option value="">— Select —</option>
+                <option value="__new__">+ NEW LOAN</option>
+            </select>
+            <div id="newLoanSection" class="verifier-form" style="display: none;">
+                <p style="font-size: 12px; font-weight: bold; margin-bottom: 8px;">+ NEW LOAN</p>
+                <div class="step"><label>Loan Name</label><input type="text" id="vLoanName" placeholder="bjmagnarepay1 [auto]"><button type="button" class="btn" style="padding:4px 8px;font-size:11px;" onclick="this.previousElementSibling.focus()">✏️</button></div>
+                <div class="step"><label>Account Number</label><input type="text" id="vAccount" placeholder="H400FBL0337784" required><button type="button" class="btn" style="padding:4px 8px;font-size:11px;" onclick="this.previousElementSibling.focus()">✏️</button></div>
+                <div class="step"><label>Borrower Name</label><input type="text" id="vBorrower" placeholder="muddu surendra nehru"><button type="button" class="btn" style="padding:4px 8px;font-size:11px;" onclick="this.previousElementSibling.focus()">✏️</button></div>
+                <div class="step"><label>Current OS (₹)</label><input type="text" id="vOS" placeholder="Enter amount"><button type="button" class="btn" style="padding:4px 8px;font-size:11px;" onclick="this.previousElementSibling.focus()">✏️</button></div>
+                <div class="step"><label>Monthly EMI (₹)</label><input type="text" id="vEMI" placeholder="Enter amount"><button type="button" class="btn" style="padding:4px 8px;font-size:11px;" onclick="this.previousElementSibling.focus()">✏️</button></div>
+                <div class="step"><label>Disbursal Date</label><input type="date" id="vDisbursal" placeholder="2020-06-17"><button type="button" class="btn" style="padding:4px 8px;font-size:11px;" onclick="this.previousElementSibling.focus()">✏️</button></div>
+                <div class="step"><label>Loan Type</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="vLoanType" value="Standard"> Standard</label>
+                        <label><input type="radio" name="vLoanType" value="Flexi" checked> Flexi</label>
+                        <label><input type="radio" name="vLoanType" value="Personal"> Personal</label>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-success" id="saveLoanBtn" style="width:100%;" onclick="saveLoan()">✅ SAVE LOAN</button>
+            </div>
+            <p id="verifierExistingMsg" style="font-size: 11px; color: #bdc3c7; margin-top: 8px;"></p>
+        </div>
+
+        <!-- TAB 3: DEBT MANAGER -->
+        <div id="panel3" class="tab-panel">
+            <p style="font-size: 11px; margin-bottom: 8px;">🤖 DEBT MANAGER (Active loans only)</p>
+            <div class="active-loans-list" id="activeLoansList"></div>
+            <label style="font-size: 11px;">Select loan:</label>
+            <select id="managerLoanSelect" class="loan-select">
+                <option value="">— Select loan —</option>
+            </select>
+            <p id="managerAddLabel" style="font-size: 11px; margin: 6px 0; display: none;">📎 Add file / Add image (PDF or image only):</p>
+            <div id="managerDropZone" class="drop-zone" style="display: none;">
+                <div>📁</div>
+                <p><strong>📎 Add file / Add image</strong></p>
+                <p style="font-size: 10px;">Drag here or click to choose</p>
+                <button type="button" class="btn" style="margin-top: 6px;" onclick="document.getElementById('managerFileInput').click()">➕ ADD FILE</button>
+                <input type="file" id="managerFileInput" accept=".pdf,.jpg,.jpeg,.png,.gif,.webp" style="display: none;">
+            </div>
+            <div id="managerDupBlocked" class="dup-blocked">DUPLICATE BLOCKED (Already in folder)</div>
+            <div id="managerDocTypeBtns" style="display: none;">
+                <div class="doc-type-btn" onclick="setManagerDocType('EMI Running')">[EMI Running]</div>
+                <div class="doc-type-btn" onclick="setManagerDocType('Interest Cert')">[Interest Cert]</div>
+                <div class="doc-type-btn" onclick="setManagerDocType('Welcome Letter')">[Welcome Letter]</div>
+                <div class="doc-type-btn" onclick="setManagerDocType('Closing/NOC')">[Closing/NOC]</div>
+                <div class="doc-type-btn" onclick="setManagerDocType('Other')">[Other]</div>
+            </div>
+            <div class="manager-slots" id="managerSlots"></div>
+            <button type="button" class="btn btn-success" style="width:100%; margin: 4px 0;" onclick="generateOtsLetter()">📄 GENERATE OTS LETTER</button>
+            <button type="button" class="btn" style="width:100%; margin: 4px 0;" onclick="runPowershell()">⚙️ RUN POWERSHELL</button>
+            <button type="button" class="btn" style="width:100%; margin: 4px 0;" onclick="refreshDashboard()">🔄 REFRESH DASHBOARD</button>
+            <div id="managerPsBlock" class="ps-cmd" style="display:none;"></div>
+            <!-- LIVE DASHBOARD PLACEHOLDER (no hardcoded cards) -->
+            <div id="tab3DashboardPlaceholder" class="dashboard-placeholder no-print" style="margin-top:16px; background:#e8f5e9; padding:16px; border-radius:8px; text-align:center;">
+                <h3 style="color:#1b5e20; font-size:16px; margin-bottom:8px;">📊 LIVE DASHBOARD</h3>
+                <p id="tab3LiveSummary" style="margin:8px 0;">✅ 0 loans active | Total Exposure: ₹0</p>
+                <button type="button" class="btn btn-success" onclick="window.open('verifier.html','_blank')">OPEN FULL DASHBOARD</button>
+                <p style="margin-top:8px; font-size:11px; color:#555;"><small>Run <code>py empire.py</code> to update dashboard with latest loans</small></p>
+            </div>
+        </div>
+
+        <div style="margin-top: 16px; text-align: center;">
+            <a href="verifier.html" class="btn" style="text-decoration: none; display: block; font-size: 12px;">📊 MASTER DASHBOARD</a>
+            <a href="verifier_with_upload_v3.2.html" download="verifier_with_upload_v3.2.html" class="btn" style="text-decoration: none; display: block; font-size: 12px; margin-top: 6px;">💾 Download as .html (correct name)</a>
+            <p style="font-size: 10px; color: #95a5a6; margin-top: 6px;">Save As? Use name: verifier_with_upload_v3.2.html (no underscore after .html)</p>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT: DASHBOARD (dynamic from localStorage.debtEmpireLoans) -->
+    <div class="main-content">
+        <div class="header">
+            <h1>DEBT EMPIRE VERIFIER</h1>
+            <div class="subtitle">Loan Verification & OTS Management Dashboard</div>
+        </div>
+        <div class="loan-tree" id="mainLoanTree"></div>
+        <div style="background: #e8f5e9; padding: 20px; border-radius: 8px; margin-top: 20px; text-align: center;">
+            <h3 style="color: #1b5e20; margin-bottom: 10px;">TOTAL SAVINGS POTENTIAL</h3>
+            <div id="mainTotalSavings" style="font-size: 32px; font-weight: bold; color: #d32f2f;">₹0</div>
+            <div style="margin-top: 10px; color: #555;">(30% of total OS from your loans)</div>
+        </div>
+        <div style="margin-top: 20px; text-align: center;" class="no-print">
+            <button class="btn" style="background: #27ae60;" onclick="window.print()">🖨️ PRINT DASHBOARD (Ctrl+P)</button>
+            <a href="verifier.html" class="btn" style="background: #3498db; margin-left: 10px; text-decoration: none; display: inline-block;">📊 MASTER DASHBOARD</a>
+            <button class="btn" onclick="location.reload()">REFRESH DASHBOARD</button>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            var EXTRACT_DRAFT_KEY = 'extractDraft';
+            var LOANS_KEY = 'debtEmpireLoans';
+            var STORAGE_KEY = 'debt_empire_v32';
+            var docHashesByLoan = {};
+            var managerDocType = 'EMI Running';
+
+            function getNextCounter(prefix) {
+                var counters = JSON.parse(localStorage.getItem('counters') || '{}');
+                counters[prefix] = (counters[prefix] || 1);
+                localStorage.setItem('counters', JSON.stringify(counters));
+                return counters[prefix]++;
+            }
+
+            function getSuggestedLoanName(account) {
+                if (!account) return 'loan_' + Date.now().toString().slice(-6);
+                var a = String(account);
+                var counters = JSON.parse(localStorage.getItem('counters') || '{}');
+                if (a.includes('H400FBL')) return 'bjmagnarepay' + ((counters.bjmagnarepay || 0) + 1);
+                if (a.includes('BL2409')) return 'lt908';
+                if (a.includes('400LAP')) return 'baj47L';
+                if (a.includes('HDFC')) return 'hdfc_' + ((counters.hdfc || 0) + 1);
+                if (a.includes('TATA')) return 'tata_' + ((counters.tata || 0) + 1);
+                return 'loan_' + Date.now().toString().slice(-6);
+            }
+
+            function generateLoanName(account) {
+                if (!account) return 'loan_' + Date.now().toString().slice(-6);
+                var a = String(account);
+                if (a.includes('H400FBL')) return 'bjmagnarepay' + getNextCounter('bjmagnarepay');
+                if (a.includes('BL2409')) return 'lt908';
+                if (a.includes('400LAP')) return 'baj47L';
+                if (a.includes('HDFC')) return 'hdfc_' + getNextCounter('hdfc');
+                if (a.includes('TATA')) return 'tata_' + getNextCounter('tata');
+                return 'loan_' + Date.now().toString().slice(-6);
+            }
+
+            function generateFallbackName(borrower, date) {
+                var initials = (borrower || 'loan').split(/\s+/).map(function(n) { return (n[0] || '').toLowerCase(); }).join('').slice(0, 4) || 'ln';
+                var datePart = (date || '').replace(/-/g, '').slice(2, 8) || Date.now().toString().slice(-6);
+                return initials + '_' + datePart + '_' + Date.now().toString(36).slice(-4);
+            }
+
+            if (typeof pdfjsLib !== 'undefined') {
+                pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+            }
+
+            document.querySelectorAll('.tab-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+                    document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
+                    btn.classList.add('active');
+                    var id = btn.getAttribute('data-tab');
+                    var panel = document.getElementById('panel' + id);
+                    if (panel) panel.classList.add('active');
+                    if (id === '2') {
+                        var verSel = document.getElementById('verifierLoanSelect');
+                        function fillVerifierDropdown(loans) {
+                            verSel.innerHTML = '<option value="">— Select —</option>';
+                            (loans || []).forEach(function(l) {
+                                var name = l.name || l.id || (l.account_ref || l.provider || '');
+                                var acct = l.account || l.account_ref || '';
+                                var val = l.id || name || acct;
+                                verSel.appendChild(new Option(name + (acct ? ' (' + acct + ')' : ''), val));
+                            });
+                            verSel.appendChild(new Option('+ NEW LOAN', '__new__'));
+                            var draft = null;
+                            try { draft = JSON.parse(localStorage.getItem(EXTRACT_DRAFT_KEY) || 'null'); } catch (e) {}
+                            var hasDraft = draft && (draft.account || draft.borrower || draft.os || draft.emi || draft.disbursal || draft.loanType || draft.docType);
+                            if (hasDraft) {
+                                verSel.value = '__new__';
+                                document.getElementById('newLoanSection').style.display = 'block';
+                                document.getElementById('verifierExistingMsg').textContent = '';
+                                loadVerifierFromExtract();
+                            }
+                        }
+                        fillVerifierDropdown(getActiveLoans());
+                    }
+                    if (id === '3') renderTab3();
+                });
+            });
+
+            var extractDz = document.getElementById('extractDropZone');
+            var extractInput = document.getElementById('extractFileInput');
+            extractDz.addEventListener('click', function() { extractInput.click(); });
+            extractInput.addEventListener('change', function(e) { if (e.target.files[0]) runExtract(e.target.files[0]); });
+            ['dragenter','dragover','dragleave','drop'].forEach(function(ev) {
+                extractDz.addEventListener(ev, function(e) { e.preventDefault(); e.stopPropagation(); });
+            });
+            extractDz.addEventListener('dragenter', function() { extractDz.classList.add('drag-over'); });
+            extractDz.addEventListener('dragleave', function() { extractDz.classList.remove('drag-over'); });
+            extractDz.addEventListener('drop', function(e) { extractDz.classList.remove('drag-over'); if (e.dataTransfer.files[0]) runExtract(e.dataTransfer.files[0]); });
+
+            function formatIndianNumber(num) {
+                var n = String(num).replace(/,/g, '');
+                if (!/^\d+$/.test(n)) return num;
+                var len = n.length;
+                if (len <= 3) return n;
+                var last3 = n.slice(-3);
+                var rest = n.slice(0, -3);
+                return rest.replace(/\B(?=(\d{2})+(?!\d))/g, ',') + ',' + last3;
+            }
+
+            function parseExtractedText(text) {
+                var t = (text || '').toLowerCase();
+                var raw = text || '';
+                var out = { borrower: '', account: '', os: '', emi: '', disbursal: '', loanType: '', docType: '' };
+                var account = '';
+                var loanAcctM = raw.match(/Loan\s+Account\s+Number\s*[:\s]*([A-Z0-9]{10,20})/i);
+                if (loanAcctM) account = loanAcctM[1].trim();
+                else {
+                    var acctM = raw.match(/(?:account|ac\s*#?|ref)\s*[:\s]*([A-Z0-9]{10,20})/i);
+                    if (acctM) account = acctM[1].trim();
+                    else {
+                        var acctMatch = raw.match(/(H400FBL\d+)|(400LAP\d+)|(400DFR\d+)|(BL\d+)|(HDFC\d+)/gi);
+                        if (acctMatch) account = acctMatch[0];
+                    }
+                }
+                out.account = account;
+
+                var coAppM = raw.match(/CoApplicant\s*[:\s]+([A-Za-z\s,]+?)(?:\n|Applicant|Loan|$)/i);
+                if (coAppM) {
+                    var coApp = coAppM[1].trim();
+                    out.borrower = coApp.split(',')[0].trim().toLowerCase().replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+                }
+                if (!out.borrower) {
+                    var nameM = raw.match(/(?:Applicant|name|borrower)\s*[:\s]+([A-Za-z\s]+?)(?:\n|$|account|CoApplicant)/i);
+                    if (nameM) out.borrower = nameM[1].trim().toLowerCase().replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+                }
+                if (!out.borrower && /muddu|surendra|nehru/i.test(raw)) out.borrower = 'muddu surendra nehru';
+
+                // AFTER (fixed): skip if number appears in account pattern (account fragment, not OS amount)
+                var osRegex = /(?:outstanding|current\s+os|balance)[:\s]*₹?([\d,]+(?:\.\d{1,2})?)/gi;
+                var osVal = '';
+                var osMatch;
+                while ((osMatch = osRegex.exec(raw)) !== null) {
+                    if (account && osMatch[1] && account.includes(osMatch[1].replace(/,/g, ''))) {
+                        // INVALID - this is account fragment, not OS amount → force manual entry
+                        continue;
+                    }
+                    var numPart = osMatch[1].replace(/,/g, '');
+                    var num = parseFloat(numPart);
+                    if (num >= 1000 && num < 999999999) { osVal = formatIndianNumber(Math.round(num)); break; }
+                }
+                if (!osVal) out.os = '';
+                else out.os = osVal;
+
+                var emiRegex = /(?:emi|monthly\s+payment)[:\s]*₹?([\d,]+(?:\.\d{1,2})?)/gi;
+                var emiVal = '';
+                var emiMatch;
+                while ((emiMatch = emiRegex.exec(raw)) !== null) {
+                    var ctx = raw.substring(Math.max(0, emiMatch.index - 35), emiMatch.index).toLowerCase();
+                    if (/total\s+emis\s+paid|principal\s+component|interest\s+component/i.test(ctx)) continue;
+                    var numPart = emiMatch[1].replace(/,/g, '');
+                    if (account && account.includes(numPart)) continue;
+                    var num = parseFloat(numPart);
+                    if (num >= 1000 && num < 99999999) { emiVal = formatIndianNumber(Math.round(num)); break; }
+                }
+                if (!emiVal) out.emi = '';
+                else out.emi = emiVal;
+
+                var months = { jan: '01', feb: '02', mar: '03', apr: '04', may: '05', jun: '06', jul: '07', aug: '08', sep: '09', oct: '10', nov: '11', dec: '12' };
+                var dateDddM = raw.match(/(\d{1,2})[-/]([A-Za-z]{3})[-/](\d{4})/i);
+                if (dateDddM) {
+                    var dd = dateDddM[1].padStart ? dateDddM[1].padStart(2, '0') : (dateDddM[1].length === 1 ? '0' + dateDddM[1] : dateDddM[1]);
+                    var mm = months[dateDddM[2].toLowerCase().slice(0, 3)] || '01';
+                    out.disbursal = dateDddM[3] + '-' + mm + '-' + dd;
+                } else {
+                    var dateM = raw.match(/\d{4}-\d{2}-\d{2}|\d{2}\/\d{2}\/\d{4}|\d{2}-\d{2}-\d{4}/);
+                    if (dateM) out.disbursal = dateM[0].replace(/(\d{2})\/(\d{2})\/(\d{4})/, '$3-$2-$1').replace(/(\d{2})-(\d{2})-(\d{4})/, '$3-$1-$2');
+                    else out.disbursal = '2020-06-17';
+                }
+
+                if (/flexi|lap|revolving/i.test(t)) out.loanType = 'Flexi';
+                else if (/personal/i.test(t)) out.loanType = 'Personal';
+                else out.loanType = 'Standard';
+
+                if (/interest\s+certificate|interest\s+cert/i.test(t)) out.docType = 'Interest Cert';
+                else if (/emi|running|statement/i.test(t)) out.docType = 'EMI Running Statement';
+                else if (/welcome/i.test(t)) out.docType = 'Welcome Letter';
+                else if (/closing|noc/i.test(t)) out.docType = 'Closing Letter/NOC';
+                else out.docType = 'Other';
+                var docTypeClean = (out.docType || '').replace(/_with_upload[^\s]*|_v\d+\.?\d*[^\s]*|\.html\s*$/gi, '').trim();
+                if (docTypeClean) out.docType = docTypeClean;
+                return out;
+            }
+
+            function setExtractFields(o) {
+                var account = o.account || '';
+                document.getElementById('exLoanName').value = getSuggestedLoanName(account);
+                document.getElementById('exBorrower').value = o.borrower || '';
+                document.getElementById('exAccount').value = account;
+                var exOS = document.getElementById('exOS');
+                exOS.value = o.os || '';
+                var osNum = parseInt(String(o.os).replace(/,/g, ''), 10) || 0;
+                var osBad = osNum < 1000 || (account && o.os && account.includes(String(osNum)));
+                exOS.placeholder = osBad ? 'Enter amount' : '';
+                exOS.classList.toggle('bad-amount', osBad);
+                var exEMI = document.getElementById('exEMI');
+                exEMI.value = o.emi || '';
+                var emiNum = parseInt(String(o.emi).replace(/,/g, ''), 10) || 0;
+                var emiBad = emiNum < 1000 || (account && o.emi && account.includes(String(emiNum)));
+                exEMI.placeholder = emiBad ? 'Enter amount' : '';
+                exEMI.classList.toggle('bad-amount', emiBad);
+                document.getElementById('exDisbursal').value = o.disbursal || '';
+                document.getElementById('exLoanType').value = o.loanType || '';
+                document.getElementById('exDocType').value = o.docType || '';
+            }
+
+            function runExtract(file) {
+                var status = document.getElementById('extractStatus');
+                status.textContent = 'Extracting...';
+                var ext = (file.name || '').split('.').pop().toLowerCase();
+                function done(text) {
+                    var o = parseExtractedText(text);
+                    setExtractFields(o);
+                    status.textContent = 'Done. Click ➕ ADD TO DASHBOARD or EXTRACT GOOD → NEXT.';
+                    if (typeof window.onExtractComplete === 'function') window.onExtractComplete(o);
+                }
+                if (ext === 'pdf' && typeof pdfjsLib !== 'undefined') {
+                    var r = new FileReader();
+                    r.onload = function() {
+                        pdfjsLib.getDocument(r.result).promise.then(function(pdf) {
+                            var promises = [];
+                            for (var i = 1; i <= Math.min(pdf.numPages, 5); i++) promises.push(pdf.getPage(i).then(function(page) { return page.getTextContent(); }).then(function(c) { return c.items.map(function(x) { return x.str; }).join(' '); }));
+                            Promise.all(promises).then(function(parts) { done(parts.join('\n')); }).catch(function() { done(''); });
+                        }).catch(function() { done(''); });
+                    };
+                    r.readAsArrayBuffer(file);
+                } else if (['jpg','jpeg','png'].indexOf(ext) >= 0 && typeof Tesseract !== 'undefined') {
+                    Tesseract.recognize(file, 'eng').then(function(result) { done(result.data.text); }).catch(function() { done(''); });
+                } else {
+                    var r = new FileReader();
+                    r.onload = function() { done(r.result); };
+                    r.readAsText(file);
+                }
+            }
+
+            window.reExtract = function() { document.getElementById('extractStatus').textContent = ''; extractInput.value = ''; };
+
+            window.extractGoodNext = function() {
+                var account = document.getElementById('exAccount').value.trim();
+                var draft = {
+                    borrower: document.getElementById('exBorrower').value.trim(),
+                    account: account,
+                    os: document.getElementById('exOS').value.trim(),
+                    emi: document.getElementById('exEMI').value.trim(),
+                    disbursal: document.getElementById('exDisbursal').value.trim(),
+                    loanType: document.getElementById('exLoanType').value.trim(),
+                    docType: document.getElementById('exDocType').value.trim()
+                };
+                localStorage.setItem(EXTRACT_DRAFT_KEY, JSON.stringify(draft));
+                document.querySelector('[data-tab="2"]').click();
+                setTimeout(function() {
+                    document.getElementById('verifierLoanSelect').value = '__new__';
+                    document.getElementById('newLoanSection').style.display = 'block';
+                    document.getElementById('verifierExistingMsg').textContent = '';
+                    loadVerifierFromExtract();
+                    var el = document.getElementById('newLoanSection');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }, 150);
+            };
+
+            window.copyExtractToClipboard = function() {
+                var lines = [
+                    'Loan Name: ' + document.getElementById('exLoanName').value,
+                    'Borrower Name: ' + document.getElementById('exBorrower').value,
+                    'Account Number: ' + document.getElementById('exAccount').value,
+                    'Current OS (₹): ' + document.getElementById('exOS').value,
+                    'Monthly EMI (₹): ' + document.getElementById('exEMI').value,
+                    'Disbursal Date: ' + document.getElementById('exDisbursal').value,
+                    'Loan Type: ' + document.getElementById('exLoanType').value,
+                    'Doc Type: ' + document.getElementById('exDocType').value
+                ];
+                var t = lines.join('\n');
+                if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t);
+                else prompt('Copy:', t);
+            };
+
+            document.getElementById('verifierLoanSelect').addEventListener('change', function() {
+                var v = this.value;
+                var showForm = v === '__new__' || (v && v !== '');
+                document.getElementById('newLoanSection').style.display = showForm ? 'block' : 'none';
+                if (v === '__new__') {
+                    loadVerifierFromExtract();
+                    document.getElementById('verifierExistingMsg').textContent = '';
+                } else if (v) {
+                    loadVerifierFromLoan(v);
+                    document.getElementById('verifierExistingMsg').textContent = 'Edit below and click ✅ SAVE LOAN to update. Or use STEP 3 to add documents.';
+                } else {
+                    document.getElementById('verifierExistingMsg').textContent = '';
+                }
+            });
+
+            function loadVerifierFromLoan(loanId) {
+                var loan = loans.find(function(l) { return l.id === loanId || l.name === loanId; });
+                if (!loan) return;
+                document.getElementById('vLoanName').value = loan.name || loan.id;
+                document.getElementById('vAccount').value = loan.account || '';
+                document.getElementById('vBorrower').value = loan.borrower || 'muddu surendra nehru';
+                document.getElementById('vOS').value = String(loan.os || '').replace(/,/g, '');
+                document.getElementById('vEMI').value = String(loan.emi || '').replace(/,/g, '');
+                document.getElementById('vDisbursal').value = loan.disbursal || '2020-06-17';
+                var type = (loan.type || 'Flexi').toLowerCase();
+                if (type.indexOf('flexi') >= 0) { var r = document.querySelector('input[name="vLoanType"][value="Flexi"]'); if (r) r.checked = true; }
+                else if (type.indexOf('personal') >= 0) { var r = document.querySelector('input[name="vLoanType"][value="Personal"]'); if (r) r.checked = true; }
+                else { var r = document.querySelector('input[name="vLoanType"][value="Standard"]'); if (r) r.checked = true; }
+            }
+
+            function loadVerifierFromExtract() {
+                var draft = {};
+                try { draft = JSON.parse(localStorage.getItem(EXTRACT_DRAFT_KEY) || '{}'); } catch (e) {}
+                var account = draft.account || '';
+                document.getElementById('vLoanName').value = generateLoanName(account);
+                document.getElementById('vAccount').value = draft.account || '';
+                document.getElementById('vBorrower').value = draft.borrower || 'muddu surendra nehru';
+                var vOS = document.getElementById('vOS');
+                vOS.value = (draft.os || '').replace(/,/g, '');
+                var osNum = parseInt(String(draft.os).replace(/,/g, ''), 10) || 0;
+                var osBad = osNum < 1000 || (account && draft.os && account.includes(String(osNum)));
+                vOS.placeholder = osBad ? 'Enter amount' : '';
+                vOS.classList.toggle('bad-amount', osBad);
+                var vEMI = document.getElementById('vEMI');
+                vEMI.value = (draft.emi || '').replace(/,/g, '');
+                var emiNum = parseInt(String(draft.emi).replace(/,/g, ''), 10) || 0;
+                var emiBad = emiNum < 1000 || (account && draft.emi && account.includes(String(emiNum)));
+                vEMI.placeholder = emiBad ? 'Enter amount' : '';
+                vEMI.classList.toggle('bad-amount', emiBad);
+                document.getElementById('vDisbursal').value = draft.disbursal || '2020-06-17';
+                var type = (draft.loanType || 'Flexi').toLowerCase();
+                if (type.indexOf('flexi') >= 0) document.querySelector('input[name="vLoanType"][value="Flexi"]').checked = true;
+                else if (type.indexOf('personal') >= 0) document.querySelector('input[name="vLoanType"][value="Personal"]').checked = true;
+                else document.querySelector('input[name="vLoanType"][value="Standard"]').checked = true;
+            }
+
+            window.saveLoan = function() {
+                var accountInput = document.getElementById('vAccount');
+                var account = accountInput.value.trim();
+                if (!account) {
+                    alert('⚠️ Account number required. Check document header.');
+                    if (accountInput.focus) accountInput.focus();
+                    return;
+                }
+                var borrowerInput = document.getElementById('vBorrower');
+                var dateInput = document.getElementById('vDisbursal');
+                var loanNameInput = document.getElementById('vLoanName');
+                var nameVal = loanNameInput.value.trim();
+                var id = nameVal || generateLoanName(account) || generateFallbackName(borrowerInput.value, dateInput.value);
+                if (!nameVal) loanNameInput.value = id;
+                var loan = {
+                    id: id,
+                    name: loanNameInput.value.trim() || id,
+                    account: account,
+                    borrower: (borrowerInput.value || 'muddu surendra nehru').trim(),
+                    os: parseInt(document.getElementById('vOS').value.replace(/,/g, '') || '0', 10),
+                    emi: parseInt(document.getElementById('vEMI').value.replace(/,/g, '') || '0', 10),
+                    disbursal: (dateInput.value || '2020-06-17'),
+                    type: (document.querySelector('input[name="vLoanType"]:checked') || {}).value || 'Flexi',
+                    status: 'active',
+                    docs: [],
+                    addedAt: new Date().toISOString(),
+                    lastUpdated: new Date().toISOString()
+                };
+                var idx = loans.findIndex(function(l) { return l.id === loan.id; });
+                if (idx >= 0) loans[idx] = loan;
+                else loans.push(loan);
+                saveLoans();
+                window.updateDashboard();
+                renderActiveLoans();
+                document.getElementById('verifierExistingMsg').textContent = '✅ Loan ' + loan.name + ' saved! Run \'py empire.py\' to refresh dashboard.';
+                alert('✅ Loan ' + loan.name + ' saved! Run \'py empire.py\' to refresh dashboard.');
+            };
+
+            function normalizeLoan(l) {
+                if (!l) return l;
+                var o = { id: l.id || l.name, name: l.name || l.id, account: l.account || '', borrower: l.borrower || 'muddu surendra nehru', os: l.os || 0, emi: l.emi || 0, disbursal: l.disbursal || '', type: l.type || 'Flexi', status: l.status || 'active', docs: Array.isArray(l.docs) ? l.docs : (l.doc ? [l.doc] : []), addedAt: l.addedAt || l.dateAdded || new Date().toISOString() };
+                return o;
+            }
+            var loans = [];
+            try {
+                loans = (JSON.parse(localStorage.getItem(LOANS_KEY) || '[]')).map(normalizeLoan);
+            } catch (e) { loans = []; }
+            function getLoans() { return loans; }
+            function saveLoans() {
+                localStorage.setItem(LOANS_KEY, JSON.stringify(loans.slice(0, 50)));
+                console.log('✅ Saved', loans.length, 'loans to localStorage');
+            }
+            window.loans = loans;
+            window.saveLoans = saveLoans;
+            function getActiveLoans() {
+                return loans.filter(function(l) { return (l.status || '').toLowerCase() !== 'closed'; });
+            }
+
+            window.addLoan = function(loanObj) {
+                if (!loanObj) return;
+                var id = loanObj.id || loanObj.name || (loanObj.account ? generateLoanName(loanObj.account) : 'loan_' + Date.now().toString().slice(-6));
+                var loan = {
+                    id: id,
+                    name: loanObj.name || id,
+                    account: loanObj.account || '',
+                    borrower: (loanObj.borrower || 'muddu surendra nehru').trim(),
+                    os: typeof loanObj.os === 'number' ? loanObj.os : parseInt(String(loanObj.os || '0').replace(/,/g, ''), 10),
+                    emi: typeof loanObj.emi === 'number' ? loanObj.emi : parseInt(String(loanObj.emi || '0').replace(/,/g, ''), 10),
+                    disbursal: loanObj.disbursal || '2019-01-15',
+                    type: loanObj.type || 'Flexi',
+                    status: loanObj.status || 'active',
+                    docs: Array.isArray(loanObj.docs) ? loanObj.docs : (loanObj.doc ? [loanObj.doc] : []),
+                    addedAt: loanObj.addedAt || new Date().toISOString()
+                };
+                var idx = loans.findIndex(function(l) { return l.id === loan.id; });
+                if (idx >= 0) loans[idx] = loan;
+                else loans.unshift(loan);
+                saveLoans();
+                if (typeof loanObj.reload !== 'undefined' ? loanObj.reload : true) location.reload();
+                else window.updateDashboard();
+                return loan;
+            };
+
+            function renderLoanCards(containerId, totalElId) {
+                var active = getActiveLoans();
+                var container = document.getElementById(containerId);
+                if (!container) return;
+                var totalOs = 0;
+                var html = '';
+                active.forEach(function(l) {
+                    var os = parseInt(l.os, 10) || 0;
+                    totalOs += os;
+                    var ots70 = Math.round(os * 0.7);
+                    var savings = Math.round(os * 0.3);
+                    var title = (l.name || l.id) + (l.account ? ' - ' + l.account : '');
+                    var osStr = formatIndianNumber(os);
+                    var emiStr = formatIndianNumber(parseInt(l.emi, 10) || 0);
+                    var otsStr = formatIndianNumber(ots70);
+                    var savStr = formatIndianNumber(savings);
+                    html += '<div class="loan-item running"><div class="loan-header"><div class="loan-title">' + title + '</div><div class="loan-badge badge-running">🟢 RUNNING</div></div><div class="loan-details"><div class="detail-item"><span class="detail-label">Borrower:</span><span class="detail-value">' + (l.borrower || '') + '</span></div><div class="detail-item"><span class="detail-label">Outstanding:</span><span class="detail-value">₹' + osStr + '</span></div><div class="detail-item"><span class="detail-label">OTS Offer (70%):</span><span class="detail-value">₹' + otsStr + '</span></div><div class="detail-item"><span class="detail-label">EMI:</span><span class="detail-value">₹' + emiStr + '</span></div><div class="detail-item"><span class="detail-label">Savings:</span><span class="detail-value">₹' + savStr + '</span></div></div></div>';
+                });
+                container.innerHTML = html || '<p style="color:#7f8c8d;padding:12px;">No loans yet. Add via Tab 1 (Extract + ➕ ADD TO DASHBOARD) or Tab 2 (+ NEW LOAN + SAVE).</p>';
+                var totalEl = document.getElementById(totalElId);
+                if (totalEl) totalEl.textContent = '₹' + formatIndianNumber(Math.round(totalOs * 0.3));
+            }
+
+            window.printOneLoan = function(loanId) {
+                var loan = loans.find(function(l) { return l.id === loanId || l.name === loanId; });
+                if (!loan) return;
+                var sheet = document.getElementById('printLoanSheet');
+                if (!sheet) return;
+                var os = parseInt(loan.os, 10) || 0;
+                var emi = parseInt(loan.emi, 10) || 0;
+                var osStr = (os.toLocaleString && os.toLocaleString('en-IN')) || String(os);
+                var emiStr = (emi.toLocaleString && emi.toLocaleString('en-IN')) || String(emi);
+                var ots70 = Math.round(os * 0.7);
+                var sav = Math.round(os * 0.3);
+                var otsStr = (ots70.toLocaleString && ots70.toLocaleString('en-IN')) || String(ots70);
+                var savStr = (sav.toLocaleString && sav.toLocaleString('en-IN')) || String(sav);
+                var name = (loan.name || loan.id || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                var account = (loan.account || 'NO ACCOUNT').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                var borrower = (loan.borrower || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                sheet.innerHTML = '<div class="print-loan-title">DEBT EMPIRE — Loan: ' + name + '</div>' +
+                    '<div class="print-loan-detail"><strong>Account:</strong> ' + account + '</div>' +
+                    '<div class="print-loan-detail"><strong>Borrower:</strong> ' + borrower + '</div>' +
+                    '<div class="print-loan-detail"><strong>Outstanding (OS):</strong> ₹' + osStr + '</div>' +
+                    '<div class="print-loan-detail"><strong>Monthly EMI:</strong> ₹' + emiStr + '</div>' +
+                    '<div class="print-loan-detail"><strong>OTS Offer (70%):</strong> ₹' + otsStr + '</div>' +
+                    '<div class="print-loan-detail"><strong>Savings (30%):</strong> ₹' + savStr + '</div>' +
+                    '<div class="print-loan-detail"><strong>Disbursal:</strong> ' + (loan.disbursal || '') + '</div>' +
+                    '<div class="print-loan-detail"><strong>Type:</strong> ' + (loan.type || '') + '</div>' +
+                    '<p style="margin-top:16px; font-size:12px;">Printed from Debt Empire v3.2 — Ctrl+P</p>';
+                window.print();
+            };
+
+            function renderActiveLoans() {
+                var active = getActiveLoans();
+                var container = document.getElementById('activeLoansList');
+                if (!container) return;
+                var keyPrefix = STORAGE_KEY + '_hashes_';
+                container.innerHTML = active.map(function(loan) {
+                    var store = {};
+                    try { store = JSON.parse(localStorage.getItem(keyPrefix + loan.id) || '{}'); } catch (e) {}
+                    var docCount = (loan.docs && loan.docs.length) || Object.keys(store).length;
+                    var os = parseInt(loan.os, 10) || 0;
+                    var emi = parseInt(loan.emi, 10) || 0;
+                    var osStr = os.toLocaleString ? os.toLocaleString('en-IN') : String(os);
+                    var emiStr = emi.toLocaleString ? emi.toLocaleString('en-IN') : String(emi);
+                    var idAttr = (loan.id || '').replace(/"/g, '&quot;');
+                    return '<div class="loan-item loan-row"><strong>' + (loan.name || loan.id) + '</strong> (' + (loan.account || 'NO ACCOUNT') + ')<div>OS: ₹' + osStr + ' | EMI: ₹' + emiStr + '</div><div>📁 loans/' + (loan.name || loan.id) + '/ (' + docCount + '/5 docs)</div><button type="button" class="btn" style="margin-top:4px; font-size:11px;" data-loan-id="' + idAttr + '" onclick="printOneLoan(this.getAttribute(\'data-loan-id\'))">🖨️ Print (Ctrl+P)</button></div>';
+                }).join('');
+            }
+
+            function updateTab3Placeholder() {
+                var active = getActiveLoans();
+                var totalExposure = active.reduce(function(sum, l) { return sum + (parseInt(l.os, 10) || 0); }, 0);
+                var el = document.getElementById('tab3LiveSummary');
+                if (el) el.textContent = '✅ ' + active.length + ' loans active | Total Exposure: ₹' + (totalExposure.toLocaleString ? totalExposure.toLocaleString('en-IN') : totalExposure);
+            }
+
+            function renderTab3() {
+                renderActiveLoans();
+                updateTab3Placeholder();
+                var active = getActiveLoans();
+                var sel = document.getElementById('managerLoanSelect');
+                if (sel) {
+                    sel.innerHTML = '<option value="">— Select loan —</option>';
+                    active.forEach(function(l) {
+                        sel.appendChild(new Option(l.name + ' (' + l.account + ')', l.id));
+                    });
+                }
+                var loan = sel && sel.value;
+                var dz = document.getElementById('managerDropZone');
+                var btns = document.getElementById('managerDocTypeBtns');
+                var addLbl = document.getElementById('managerAddLabel');
+                if (dz) dz.style.display = loan ? 'block' : 'none';
+                if (btns) btns.style.display = loan ? 'block' : 'none';
+                if (addLbl) addLbl.style.display = loan ? 'block' : 'none';
+                updateManagerSlots();
+            }
+
+            document.getElementById('managerLoanSelect').addEventListener('change', function() {
+                var loan = this.value;
+                document.getElementById('managerDropZone').style.display = loan ? 'block' : 'none';
+                document.getElementById('managerDocTypeBtns').style.display = loan ? 'block' : 'none';
+                var addLbl = document.getElementById('managerAddLabel');
+                if (addLbl) addLbl.style.display = loan ? 'block' : 'none';
+                updateManagerSlots();
+            });
+
+            window.setManagerDocType = function(t) { managerDocType = t; };
+            var managerDz = document.getElementById('managerDropZone');
+            var managerInput = document.getElementById('managerFileInput');
+            managerDz.addEventListener('click', function() { managerInput.click(); });
+            managerInput.addEventListener('change', function(e) {
+                if (!e.target.files[0]) return;
+                var file = e.target.files[0];
+                var loan = document.getElementById('managerLoanSelect').value;
+                if (!loan) return;
+                var key = STORAGE_KEY + '_hashes_' + loan;
+                var store = JSON.parse(localStorage.getItem(key) || '{}');
+                var sig = file.name + '-' + file.size;
+                if (store[file.name] === sig) {
+                    document.getElementById('managerDupBlocked').textContent = 'DUPLICATE BLOCKED: ' + file.name + ' (Already in folder)';
+                    document.getElementById('managerDupBlocked').classList.add('show');
+                    return;
+                }
+                store[file.name] = sig;
+                localStorage.setItem(key, JSON.stringify(store));
+                document.getElementById('managerDupBlocked').classList.remove('show');
+                updateManagerSlots();
+                renderTab3();
+            });
+            ['dragenter','dragover','dragleave','drop'].forEach(function(ev) {
+                managerDz.addEventListener(ev, function(e) { e.preventDefault(); e.stopPropagation(); });
+            });
+            managerDz.addEventListener('drop', function(e) {
+                e.preventDefault();
+                if (e.dataTransfer.files[0]) managerInput.files = e.dataTransfer.files;
+                managerInput.dispatchEvent(new Event('change'));
+            });
+
+            function updateManagerSlots() {
+                var loan = document.getElementById('managerLoanSelect').value;
+                var slotsEl = document.getElementById('managerSlots');
+                if (!loan) { slotsEl.innerHTML = ''; return; }
+                var key = STORAGE_KEY + '_hashes_' + loan;
+                var store = JSON.parse(localStorage.getItem(key) || '{}');
+                var n = Object.keys(store).length;
+                var files = Object.keys(store);
+                var lines = ['📁 loans/' + loan + '/ (' + n + '/5 docs)'];
+                for (var i = 0; i < Math.min(5, files.length); i++) lines.push((i < 4 ? '├' : '└') + '── ' + files[i] + ' ✅');
+                for (var j = files.length; j < 5; j++) lines.push((j < 4 ? '├' : '└') + '── (slot ' + (j+1) + ')');
+                slotsEl.innerHTML = lines.join('<br>');
+            }
+
+            window.generateOtsLetter = function() { alert('Generate OTS letter: run empire.py → ots-pdfs/'); };
+            window.runPowershell = function() {
+                var loan = document.getElementById('managerLoanSelect').value;
+                var loans = getLoans();
+                var data = loans.find(function(l) { return l.id === loan; }) || {};
+                var borrower = data.borrower || 'muddu surendra nehru';
+                var account = data.account || 'H400FBL0337784';
+                var os = data.os || '4356000';
+                var emi = data.emi || '54000';
+                var disb = data.disbursal || '2020-06-17';
+                var cmd = 'py loan_verifier.py << EOF\n1\n4\n' + borrower + '\n' + account + '\n' + os + '\n' + emi + '\n' + disb + '\ny\n4\nEOF';
+                document.getElementById('managerPsBlock').textContent = cmd;
+                document.getElementById('managerPsBlock').style.display = 'block';
+                if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(cmd);
+            };
+            window.refreshDashboard = function() {
+                alert('Run py empire.py first in PowerShell!');
+                location.reload();
+            };
+
+            window.addToDashboard = function(loan) {
+                loans.unshift(normalizeLoan(loan));
+                saveLoans();
+                if (window.updateDashboard) window.updateDashboard();
+                else location.reload();
+            };
+
+            window.addCurrentExtractToDashboard = function() {
+                var account = document.getElementById('exAccount').value.trim();
+                var suggested = document.getElementById('exLoanName').value.trim();
+                var id = account ? generateLoanName(account) : (suggested || ('loan_' + Date.now().toString().slice(-6)));
+                var loan = {
+                    id: id,
+                    name: id,
+                    borrower: document.getElementById('exBorrower').value.trim() || 'muddu surendra nehru',
+                    account: account,
+                    os: parseInt(document.getElementById('exOS').value.replace(/,/g, '') || '0', 10),
+                    emi: parseInt(document.getElementById('exEMI').value.replace(/,/g, '') || '0', 10),
+                    disbursal: document.getElementById('exDisbursal').value.trim() || '2019-01-15',
+                    type: document.getElementById('exLoanType').value.trim() || 'Flexi',
+                    docs: [],
+                    addedAt: new Date().toISOString()
+                };
+                window.addToDashboard(loan);
+                if (document.getElementById('extractStatus')) document.getElementById('extractStatus').textContent = 'Added: ' + id + ' — Tab 2 dropdown, Tab 3 & Dashboard updated.';
+                alert('Added: ' + id);
+            };
+
+            window.updateDashboard = function() {
+                renderLoanCards('mainLoanTree', 'mainTotalSavings');
+                try {
+                    renderTab3();
+                    updateTab3Placeholder();
+                } catch (e) {}
+                var verSel = document.getElementById('verifierLoanSelect');
+                if (verSel) {
+                    var cur = verSel.value;
+                    verSel.innerHTML = '<option value="">— Select —</option>';
+                    getActiveLoans().forEach(function(l) { verSel.appendChild(new Option(l.name + ' (' + l.account + ')', l.id)); });
+                    verSel.appendChild(new Option('+ NEW LOAN', '__new__'));
+                    if (cur && verSel.querySelector('option[value="' + cur + '"]')) verSel.value = cur;
+                }
+            };
+
+            window.onExtractComplete = function(extracted) {
+                if (!extracted) return;
+                var account = extracted.account || '';
+                var id = account ? generateLoanName(account) : ('loan_' + Date.now().toString().slice(-6));
+                var loan = {
+                    id: id,
+                    name: id,
+                    borrower: extracted.borrower || 'muddu surendra nehru',
+                    account: account,
+                    os: parseInt(String(extracted.os || '0').replace(/,/g, ''), 10) || 0,
+                    emi: parseInt(String(extracted.emi || '0').replace(/,/g, ''), 10) || 0,
+                    disbursal: extracted.disbursal || '2019-01-15',
+                    type: extracted.loanType || extracted.type || 'Flexi',
+                    docs: [],
+                    addedAt: new Date().toISOString(),
+                    reload: false
+                };
+                if (window.loansDB && typeof window.loansDB.add === 'function') {
+                    window.loansDB.add(loan);
+                } else {
+                    window.addLoan(loan);
+                }
+                window.updateDashboard();
+                alert('Added: ' + id);
+            };
+
+            renderLoanCards('mainLoanTree', 'mainTotalSavings');
+        })();
+    </script>
+    <div id="printLoanSheet"></div>
+</body>
+</html>

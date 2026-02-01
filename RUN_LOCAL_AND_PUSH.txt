@@ -1,0 +1,35 @@
+DEBT EMPIRE — Run locally (port 8080) then push to GitHub
+==========================================================
+
+STEP 1 — CHECK LOCALLY (run server, then open in browser)
+---------------------------------------------------------
+1. Open PowerShell.
+2. Go to project folder:
+   cd c:\Users\MYPC\Desktop\debt-arbitrage\debt-empire
+
+3. Start the server (keeps running until you press Ctrl+C):
+   python -m http.server 8080
+
+4. In Chrome/Edge ADDRESS BAR (not Google search), open:
+   http://localhost:8080/verifier_with_upload_v3.2.html   ← main app
+   http://localhost:8080/tools.html                       ← standalone calculators
+   http://localhost:8080/senior_arbitrage_manager.html    ← alternate UI
+
+5. Check: loans load, tabs work, tools.html calculators work. Then stop server (Ctrl+C).
+
+
+STEP 2 — PUSH TO GITHUB (first time — repo empty)
+-------------------------------------------------
+Run these in PowerShell from the same folder (debt-empire):
+
+   cd c:\Users\MYPC\Desktop\debt-arbitrage\debt-empire
+
+   git init
+   git remote add origin https://github.com/muddusurendranehru/debt-empire.git
+   git add .
+   git branch -M main
+   git commit -m "Initial commit: Debt Empire app + standalone tools page"
+   git push -u origin main
+
+If Git asks for login: use GitHub username + Personal Access Token (not password).
+If you already had git init and remote: skip "git init" and "git remote add", just add/commit/push.

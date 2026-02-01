@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debt Empire — Financial Tools (Standalone)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; color: #333; padding: 20px; max-width: 900px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 24px; }
+        .header h1 { color: #1b5e20; font-size: 26px; margin-bottom: 8px; }
+        .header .subtitle { color: #555; font-size: 14px; }
+        .tool-box { background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); border-left: 4px solid #3498db; }
+        .tool-box h2 { font-size: 16px; color: #2c3e50; margin-bottom: 12px; }
+        .tool-box label { display: block; font-size: 12px; color: #555; margin-bottom: 2px; }
+        .tool-box input { width: 100%; max-width: 220px; padding: 8px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; margin-bottom: 10px; }
+        .tool-box .row { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; margin-bottom: 12px; }
+        .tool-box .field { flex: 0 0 auto; }
+        .btn-calc { padding: 8px 16px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 13px; }
+        .btn-calc:hover { background: #2980b9; }
+        .result-card { background: #f8f9fa; border-radius: 6px; padding: 14px; margin-top: 14px; font-size: 14px; border: 1px solid #e9ecef; }
+        .result-card .line { margin-bottom: 6px; }
+        .result-card .line:last-child { margin-bottom: 0; }
+        .result-card .label { color: #555; }
+        .result-card .value { font-weight: 600; color: #1b5e20; }
+        .result-card .msg { margin-top: 10px; padding-top: 10px; border-top: 1px solid #dee2e6; color: #333; font-style: italic; }
+        .hint { font-size: 11px; color: #777; margin-top: 4px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Debt Empire — Financial Tools (Standalone)</h1>
+        <p class="subtitle">These are independent calculators. They do NOT change your stored loans or app data.</p>
+    </div>
+
+    <!-- Tool 1: EMI / Amortization -->
+    <div class="tool-box">
+        <h2>1. EMI / Amortization Calculator</h2>
+        <div class="row">
+            <div class="field">
+                <label>Principal amount (₹)</label>
+                <input type="number" id="emiPrincipal" placeholder="e.g. 5000000" min="1" step="1">
+            </div>
+            <div class="field">
+                <label>Annual interest rate (% per year)</label>
+                <input type="number" id="emiRate" placeholder="e.g. 10.5" min="0" step="0.01">
+            </div>
+            <div class="field">
+                <label>Tenure (months)</label>
+                <input type="number" id="emiTenure" placeholder="e.g. 120" min="1" step="1">
+            </div>
+            <div class="field">
+                <label>Optional: EMI (₹) — if known, leave blank to compute</label>
+                <input type="number" id="emiGiven" placeholder="leave blank to compute" min="0" step="1">
+            </div>
+            <div class="field" style="align-self: flex-end;">
+                <button type="button" class="btn-calc" onclick="calcEMI()">Calculate</button>
+            </div>
+        </div>
+        <div id="emiResult" class="result-card" style="display: none;"></div>
+    </div>
+
+    <!-- Tool 2: Position in Loan -->
+    <div class="tool-box">
+        <h2>2. Position in Loan Snapshot</h2>
+        <div class="row">
+            <div class="field">
+                <label>Principal amount (original) (₹)</label>
+                <input type="number" id="posPrincipal" placeholder="e.g. 5000000" min="1" step="1">
+            </div>
+            <div class="field">
+                <label>Annual interest rate (%)</label>
+                <input type="number" id="posRate" placeholder="e.g. 10.5" min="0" step="0.01">
+            </div>
+            <div class="field">
+                <label>Tenure (months)</label>
+                <input type="number" id="posTenure" placeholder="e.g. 153" min="1" step="1">
+            </div>
+            <div class="field">
+                <label>EMI amount (₹) — required</label>
+                <input type="number" id="posEMI" placeholder="e.g. 55000" min="1" step="1">
+            </div>
+            <div class="field">
+                <label>Month number you are in now (e.g. 63 of 153)</label>
+                <input type="number" id="posMonth" placeholder="e.g. 63" min="1" step="1">
+            </div>
+            <div class="field" style="align-self: flex-end;">
+                <button type="button" class="btn-calc" onclick="calcPosition()">Calculate</button>
+            </div>
+        </div>
+        <div id="posResult" class="result-card" style="display: none;"></div>
+    </div>
+
+    <!-- Tool 3: OTS 70/30 -->
+    <div class="tool-box">
+        <h2>3. OTS 70/30 Style Calculator</h2>
+        <div class="row">
+            <div class="field">
+                <label>Remaining principal / settlement base (₹)</label>
+                <input type="number" id="otsBase" placeholder="e.g. 4000000" min="0" step="1">
+            </div>
+            <div class="field">
+                <label>Customer pays (%) — e.g. 70</label>
+                <input type="number" id="otsCustomerPct" placeholder="70" min="0" max="100" step="1" onchange="otsWaiverSync()">
+            </div>
+            <div class="field">
+                <label>Waiver % (auto: 100 − customer%)</label>
+                <input type="number" id="otsWaiverPct" readonly placeholder="30" tabindex="-1">
+            </div>
+            <div class="field">
+                <label>Optional: Amount already paid so far (₹)</label>
+                <input type="number" id="otsAlreadyPaid" placeholder="0" min="0" step="1">
+            </div>
+            <div class="field" style="align-self: flex-end;">
+                <button type="button" class="btn-calc" onclick="calcOTS()">Calculate</button>
+            </div>
+        </div>
+        <div id="otsResult" class="result-card" style="display: none;"></div>
+    </div>
+
+    <!-- Tool 4: Quick Ratio -->
+    <div class="tool-box">
+        <h2>4. Quick Ratio Checker</h2>
+        <div class="row">
+            <div class="field">
+                <label>OS amount (₹)</label>
+                <input type="number" id="ratioOS" placeholder="e.g. 2500000" min="0" step="1">
+            </div>
+            <div class="field">
+                <label>Annual household income (₹)</label>
+                <input type="number" id="ratioIncome" placeholder="e.g. 1200000" min="1" step="1">
+            </div>
+            <div class="field" style="align-self: flex-end;">
+                <button type="button" class="btn-calc" onclick="calcRatio()">Calculate</button>
+            </div>
+        </div>
+        <p class="hint">Rough indicator only; not advice.</p>
+        <div id="ratioResult" class="result-card" style="display: none;"></div>
+    </div>
+
+    <script>
+        (function () {
+            'use strict';
+            // No localStorage, no window.loans, no saveLoans — standalone only.
+
+            function fmtNum(x) {
+                if (typeof x !== 'number' || isNaN(x)) return '—';
+                return '₹' + Math.round(x).toLocaleString('en-IN');
+            }
+
+            function otsWaiverSync() {
+                var cp = parseFloat(document.getElementById('otsCustomerPct').value) || 0;
+                document.getElementById('otsWaiverPct').value = Math.round(100 - cp);
+            }
+
+            window.calcEMI = function () {
+                var P = parseFloat(document.getElementById('emiPrincipal').value) || 0;
+                var ratePct = parseFloat(document.getElementById('emiRate').value) || 0;
+                var n = parseInt(document.getElementById('emiTenure').value, 10) || 0;
+                var emiGiven = parseFloat(document.getElementById('emiGiven').value) || 0;
+                var r = ratePct / 100 / 12;
+                var emi;
+                if (emiGiven > 0 && P > 0 && n > 0) {
+                    emi = emiGiven;
+                } else if (P > 0 && n > 0) {
+                    if (r <= 0) emi = P / n;
+                    else emi = P * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+                } else {
+                    document.getElementById('emiResult').style.display = 'none';
+                    return;
+                }
+                var totalPayment = emi * n;
+                var totalInterest = totalPayment - P;
+                var el = document.getElementById('emiResult');
+                el.innerHTML =
+                    '<div class="line"><span class="label">EMI per month: </span><span class="value">' + fmtNum(emi) + '</span></div>' +
+                    '<div class="line"><span class="label">Total payment over tenure: </span><span class="value">' + fmtNum(totalPayment) + '</span></div>' +
+                    '<div class="line"><span class="label">Total interest over tenure: </span><span class="value">' + fmtNum(totalInterest) + '</span></div>';
+                el.style.display = 'block';
+            };
+
+            window.calcPosition = function () {
+                var P = parseFloat(document.getElementById('posPrincipal').value) || 0;
+                var ratePct = parseFloat(document.getElementById('posRate').value) || 0;
+                var tenure = parseInt(document.getElementById('posTenure').value, 10) || 0;
+                var emi = parseFloat(document.getElementById('posEMI').value) || 0;
+                var currentMonth = parseInt(document.getElementById('posMonth').value, 10) || 0;
+                if (P <= 0 || tenure <= 0 || emi <= 0 || currentMonth <= 0 || currentMonth > tenure) {
+                    document.getElementById('posResult').style.display = 'none';
+                    return;
+                }
+                var r = ratePct / 100 / 12;
+                var balance = P;
+                var principalPaid = 0, interestPaid = 0;
+                for (var m = 1; m <= currentMonth && m <= tenure; m++) {
+                    var interest = balance * r;
+                    var principal = Math.min(emi - interest, balance);
+                    principalPaid += principal;
+                    interestPaid += interest;
+                    balance -= principal;
+                    if (balance < 0) balance = 0;
+                }
+                var remainingMonths = Math.max(0, tenure - currentMonth);
+                var el = document.getElementById('posResult');
+                el.innerHTML =
+                    '<div class="line"><span class="label">EMIs paid: </span><span class="value">' + currentMonth + '</span></div>' +
+                    '<div class="line"><span class="label">Approx principal repaid so far: </span><span class="value">' + fmtNum(principalPaid) + '</span></div>' +
+                    '<div class="line"><span class="label">Approx interest paid so far: </span><span class="value">' + fmtNum(interestPaid) + '</span></div>' +
+                    '<div class="line"><span class="label">Approx remaining principal: </span><span class="value">' + fmtNum(balance) + '</span></div>' +
+                    '<div class="line"><span class="label">Approx remaining months: </span><span class="value">' + remainingMonths + '</span></div>';
+                el.style.display = 'block';
+            };
+
+            window.calcOTS = function () {
+                var base = parseFloat(document.getElementById('otsBase').value) || 0;
+                var customerPct = parseFloat(document.getElementById('otsCustomerPct').value) || 0;
+                var alreadyPaid = parseFloat(document.getElementById('otsAlreadyPaid').value) || 0;
+                otsWaiverSync();
+                var waiverPct = 100 - customerPct;
+                if (base <= 0) {
+                    document.getElementById('otsResult').style.display = 'none';
+                    return;
+                }
+                var payNow = base * (customerPct / 100);
+                var waived = base * (waiverPct / 100);
+                var totalOutflow = alreadyPaid + payNow;
+                var el = document.getElementById('otsResult');
+                el.innerHTML =
+                    '<div class="line"><span class="label">Amount to pay now (OTS): </span><span class="value">' + fmtNum(payNow) + '</span></div>' +
+                    '<div class="line"><span class="label">Waived amount: </span><span class="value">' + fmtNum(waived) + '</span></div>' +
+                    '<div class="line"><span class="label">Total outflow if OTS accepted today (already paid + OTS): </span><span class="value">' + fmtNum(totalOutflow) + '</span></div>' +
+                    '<div class="msg">If you pay ' + fmtNum(payNow) + ' now, bank waives ' + fmtNum(waived) + ', you have paid ' + fmtNum(totalOutflow) + ' in total.</div>';
+                el.style.display = 'block';
+            };
+
+            window.calcRatio = function () {
+                var os = parseFloat(document.getElementById('ratioOS').value) || 0;
+                var income = parseFloat(document.getElementById('ratioIncome').value) || 0;
+                if (income <= 0) {
+                    document.getElementById('ratioResult').style.display = 'none';
+                    return;
+                }
+                var ratio = os / income;
+                var el = document.getElementById('ratioResult');
+                el.innerHTML = '<div class="line"><span class="label">OS is </span><span class="value">' + ratio.toFixed(2) + '</span><span class="label"> times your annual income (rough, not advice).</span></div>';
+                el.style.display = 'block';
+            };
+
+            // Sync waiver when page loads if user typed customer % first
+            document.getElementById('otsCustomerPct').addEventListener('input', otsWaiverSync);
+        })();
+    </script>
+</body>
+</html>

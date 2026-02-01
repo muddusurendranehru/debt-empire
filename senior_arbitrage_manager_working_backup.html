@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debt Empire v3.2 - Senior Arbitrage Manager</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.1.1/dist/tesseract.min.js"></script>
+    <style>
+        :root { --primary: #2e7d32; --secondary: #1976d2; --warning: #f57c00; --danger: #d32f2f; --success: #388e3c; }
+        * { margin:0; padding:0; box-sizing:border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background:#f8f9fa; color:#333; line-height:1.5; }
+        .tabs { display:flex; background:#2c3e50; padding:0 10px; position:sticky; top:0; z-index:100; box-shadow:0 2px 10px rgba(0,0,0,0.1); }
+        .tab-btn { flex:1; padding:15px; color:white; background:transparent; border:none; font-weight:bold; cursor:pointer; transition:all 0.3s; }
+        .tab-btn:hover { background:#34495e; }
+        .tab-btn.active { background:#3498db; color:white; }
+        .tab-content { display:none; padding:20px; }
+        .tab-content.active { display:block; }
+        .container { max-width:1400px; margin:0 auto; display:flex; gap:20px; }
+        .main-panel { flex:3; }
+        .sidebar { flex:1; background:white; border-radius:8px; padding:15px; box-shadow:0 2px 8px rgba(0,0,0,0.08); position:sticky; top:70px; max-height:calc(100vh - 80px); overflow-y:auto; }
+        .card { background:white; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.08); padding:15px; margin-bottom:15px; }
+        .card-header { display:flex; justify-content:space-between; align-items:center; padding-bottom:10px; border-bottom:1px solid #eee; margin-bottom:10px; }
+        .card-title { font-weight:bold; font-size:1.1em; color:#1a237e; }
+        .status-badge { padding:3px 8px; border-radius:12px; font-size:0.85em; font-weight:bold; }
+        .status-running { background:#e8f5e9; color:#2e7d32; }
+        .status-closed { background:#f5f5f5; color:#757575; text-decoration:line-through; }
+        .status-ots { background:#fff8e1; color:#5d4037; }
+        .btn { padding:8px 15px; border:none; border-radius:4px; cursor:pointer; font-weight:bold; transition:all 0.2s; margin:2px; }
+        .btn-primary { background:var(--primary); color:white; }
+        .btn-primary:hover { background:#1b5e20; }
+        .btn-secondary { background:var(--secondary); color:white; }
+        .btn-secondary:hover { background:#0d47a1; }
+        .btn-warning { background:var(--warning); color:white; }
+        .btn-warning:hover { background:#e65100; }
+        .btn-danger { background:var(--danger); color:white; }
+        .btn-danger:hover { background:#b71c1c; }
+        .btn-success { background:var(--success); color:white; }
+        .btn-success:hover { background:#1b5e20; }
+        .btn-outline { border:1px solid #ddd; background:white; color:#555; }
+        .btn-outline:hover { background:#f5f5f5; }
+        .form-group { margin-bottom:12px; }
+        .form-group label { display:block; margin-bottom:5px; font-weight:500; }
+        .form-control { width:100%; padding:8px 12px; border:1px solid #ddd; border-radius:4px; font-size:14px; }
+        .form-control:focus { outline:none; border-color:#3498db; box-shadow:0 0 0 2px rgba(52,152,219,0.2); }
+        .form-row { display:flex; gap:10px; flex-wrap:wrap; }
+        .form-col { flex:1; min-width:200px; }
+        table { width:100%; border-collapse:collapse; margin:10px 0; }
+        th, td { padding:10px; text-align:left; border-bottom:1px solid #eee; }
+        th { background:#f8f9fa; font-weight:bold; color:#1a237e; }
+        tr:hover td { background:#f5f9ff; }
+        .doc-row { border-left:3px solid #3498db; }
+        .doc-row:nth-child(even) { background:#f9fbfd; }
+        .action-cell { white-space:nowrap; }
+        .summary-box { background:#e8f5e9; border-left:4px solid var(--primary); padding:15px; margin:15px 0; border-radius:0 4px 4px 0; }
+        .summary-total { font-size:1.8em; font-weight:bold; color:var(--primary); margin:5px 0; }
+        .print-only { display:none; }
+        #lender-print-view { display:none; padding:20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        #lender-print-view .lender-pack-title { font-size:18px; font-weight:bold; margin-bottom:16px; }
+        #lender-print-view .lender-pack-row { margin:8px 0; }
+        @media print {
+            body * { visibility: hidden; }
+            #lender-print-view, #lender-print-view * { visibility: visible; }
+            #lender-print-view { position: absolute; left: 0; top: 0; width: 100%; display: block !important; }
+        }
+        .folder-panel { display:none; background:#f8fdff; border-left:3px solid #2196f3; padding:15px; margin-top:15px; border-radius:0 4px 4px 0; }
+        .folder-header { background:#e3f2fd; padding:10px; border-radius:4px; margin-bottom:10px; }
+        .editable-cell { cursor:pointer; padding:3px; border-radius:3px; }
+        .editable-cell:hover { background:#e3f2fd; }
+        .highlight { background:#fff8e1; padding:2px 5px; border-radius:3px; font-weight:500; }
+        .drag-zone { border:2px dashed #3498db; border-radius:8px; padding:30px; text-align:center; background:#f8fdff; margin:10px 0; cursor:pointer; transition:all 0.3s; }
+        .drag-zone:hover { background:#e3f2fd; border-color:#2196f3; }
+        .drag-zone.drag-over { background:#e8f5e9; border-color:#2e7d32; }
+        .doc-type-badge { display:inline-block; padding:2px 6px; border-radius:8px; font-size:0.85em; font-weight:bold; }
+        .type-statement { background:#e3f2fd; color:#1565c0; }
+        .type-interest_certificate { background:#e8f5e9; color:#2e7d32; }
+        .type-email { background:#fff8e1; color:#5d4037; }
+        .type-other { background:#f5f5f5; color:#616161; }
+        .collapsible-summary { cursor:pointer; padding:8px 12px; background:#f0f4f8; border-radius:4px; margin-bottom:10px; }
+        .extra-field-row { display:flex; gap:8px; align-items:flex-start; margin-bottom:8px; }
+        .extra-field-row .form-control { flex:1; }
+        .extra-field-row .btn { flex-shrink:0; }
+    </style>
+</head>
+<body>
+    <!-- TAB NAVIGATION -->
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="extractor">📎 DOCUMENT EXTRACTOR</button>
+        <button class="tab-btn" data-tab="verifier">✅ LOAN VERIFIER</button>
+        <button class="tab-btn" data-tab="manager">📊 DEBT MANAGER</button>
+    </div>
+
+    <!-- EXTRACTOR TAB -->
+    <div id="extractor" class="tab-content active">
+        <div class="container">
+            <div class="main-panel">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">📄 Drag Document to Extract Loan Data</div>
+                    </div>
+                    <div class="drag-zone" id="dropZone">
+                        <h3>📁 Drop PDF, JPG, DOCX, or CSV Here</h3>
+                        <p>Supported: Bank statements, EMI schedules, foreclosure letters, sanction letters</p>
+                        <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx,.csv" style="display:none;">
+                    </div>
+                    <div id="extractionResult" style="display:none;">
+                        <div class="card-header">
+                            <div class="card-title">🔍 Extracted Data (Editable)</div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-col">
+                                <div class="form-group">
+                                    <label>Borrower Name</label>
+                                    <input type="text" id="extBorrower" class="form-control" value="muddu surendra nehru">
+                                </div>
+                            </div>
+                            <div class="form-col">
+                                <div class="form-group">
+                                    <label>Account Number <span class="highlight">*</span></label>
+                                    <input type="text" id="extAccount" class="form-control" placeholder="⚠️ Required (e.g., H400FBL0337784)">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-col">
+                                <div class="form-group">
+                                    <label>Current OS (₹) <span class="highlight">*</span></label>
+                                    <input type="number" id="extOS" class="form-control" placeholder="e.g., 4354000">
+                                </div>
+                            </div>
+                            <div class="form-col">
+                                <div class="form-group">
+                                    <label>Monthly EMI (₹)</label>
+                                    <input type="number" id="extEMI" class="form-control" placeholder="e.g., 54700">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-col">
+                                <div class="form-group">
+                                    <label>Disbursal Date</label>
+                                    <input type="date" id="extDate" class="form-control">
+                                </div>
+                            </div>
+                            <div class="form-col">
+                                <div class="form-group">
+                                    <label>Loan Type</label>
+                                    <select id="extType" class="form-control">
+                                        <option>Flexi</option>
+                                        <option>Standard</option>
+                                        <option>Personal</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Document Type</label>
+                            <select id="extDocType" class="form-control">
+                                <option>EMI Running Statement</option>
+                                <option>Interest Certificate</option>
+                                <option>Welcome Letter</option>
+                                <option>Closing Letter/NOC</option>
+                                <option>Other</option>
+                            </select>
+                        </div>
+
+                        <!-- EXTRACTOR UPGRADE: Lender Details Block -->
+                        <div class="card" style="margin-top:15px; background:#fafafa;">
+                            <div class="card-header">
+                                <div class="card-title">🏦 Lender Details (Optional - skip if unknown)</div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-col">
+                                    <div class="form-group">
+                                        <label>Lender Name</label>
+                                        <input type="text" id="extLenderName" class="form-control" placeholder="L&T Finance, Bajaj, HDFC...">
+                                    </div>
+                                </div>
+                                <div class="form-col">
+                                    <div class="form-group">
+                                        <label>Branch / Location</label>
+                                        <input type="text" id="extLenderBranch" class="form-control" placeholder="Hyderabad, Mumbai...">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-col">
+                                    <div class="form-group">
+                                        <label>Relationship Manager</label>
+                                        <input type="text" id="extLenderRM" class="form-control" placeholder="Name">
+                                    </div>
+                                </div>
+                                <div class="form-col">
+                                    <div class="form-group">
+                                        <label>RM Contact</label>
+                                        <input type="text" id="extLenderContact" class="form-control" placeholder="Phone/Email">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- EXTRACTOR UPGRADE: Single EMI Snapshot Block -->
+                        <div class="card" style="margin-top:15px; background:#fafafa;">
+                            <div class="card-header">
+                                <div class="card-title">💰 Single EMI Snapshot (Optional - e.g. '18th EMI on 02-May-2024')</div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-col">
+                                    <div class="form-group">
+                                        <label>EMI Number</label>
+                                        <input type="number" id="extEmiNumber" class="form-control" placeholder="18">
+                                    </div>
+                                </div>
+                                <div class="form-col">
+                                    <div class="form-group">
+                                        <label>EMI Date</label>
+                                        <input type="date" id="extEmiDate" class="form-control">
+                                    </div>
+                                </div>
+                                <div class="form-col">
+                                    <div class="form-group">
+                                        <label>Amount Paid (₹)</label>
+                                        <input type="number" id="extEmiAmountPaid" class="form-control">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-col">
+                                    <div class="form-group">
+                                        <label>Principal Part (₹)</label>
+                                        <input type="number" id="extEmiPrincipal" class="form-control">
+                                    </div>
+                                </div>
+                                <div class="form-col">
+                                    <div class="form-group">
+                                        <label>Interest Part (₹)</label>
+                                        <input type="number" id="extEmiInterest" class="form-control">
+                                    </div>
+                                </div>
+                                <div class="form-col">
+                                    <div class="form-group">
+                                        <label>Transaction ID</label>
+                                        <input type="text" id="extEmiTxnId" class="form-control" placeholder="TXN123456">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- EXTRACTOR UPGRADE: Extra Fields Block -->
+                        <div class="card" style="margin-top:15px; background:#fafafa;">
+                            <div class="card-header">
+                                <div class="card-title">✨ Extra Fields (Add ANY detail from document)</div>
+                            </div>
+                            <div id="extraFieldsContainer"></div>
+                            <button type="button" id="addExtraFieldBtn" class="btn btn-outline">+ Add Custom Field</button>
+                        </div>
+
+                        <!-- EXTRACTOR UPGRADE: CSV EMI Import Block (collapsible) -->
+                        <div class="card" style="margin-top:15px; background:#fafafa;">
+                            <details id="csvImportDetails">
+                                <summary class="collapsible-summary">📊 CSV EMI Import (Optional - for bank statement CSV)</summary>
+                                <div style="margin-top:10px;">
+                                    <p style="font-size:12px; color:#666; margin-bottom:8px;">Upload bank CSV → we'll show rows for MANUAL verification. NO auto-save.</p>
+                                    <input type="file" id="csvEmiUpload" accept=".csv" class="form-control" style="margin-bottom:10px;">
+                                    <div id="csvPreviewContainer" style="display:none; margin-top:10px;">
+                                        <table class="form-control" style="display:table; font-size:12px;">
+                                            <thead>
+                                                <tr>
+                                                    <th>EMI Date</th>
+                                                    <th>EMI Amount (₹)</th>
+                                                    <th>Transaction ID</th>
+                                                    <th>✅ Keep</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="csvPreviewBody"></tbody>
+                                        </table>
+                                        <button type="button" id="applyCsvToLoanBtn" class="btn btn-primary" style="margin-top:10px;" disabled>APPLY TO CURRENT LOAN</button>
+                                    </div>
+                                </div>
+                            </details>
+                        </div>
+
+                        <button id="saveExtractBtn" class="btn btn-success">✅ EXTRACT GOOD → NEXT: VERIFIER</button>
+                        <button id="reExtractBtn" class="btn btn-outline">🔄 RE-EXTRACT</button>
+                    </div>
+                </div>
+            </div>
+            <div class="sidebar">
+                <div class="card">
+                    <div class="card-header"><div class="card-title">💡 Extraction Tips</div></div>
+                    <ul style="padding-left:20px; line-height:1.6;">
+                        <li>PDFs work best for structured statements</li>
+                        <li>JPG/PNG: Clear screenshots of account headers</li>
+                        <li>CSV/XLSX: Bank export files with EMI columns</li>
+                        <li><span class="highlight">Account Number is REQUIRED</span> - check document header</li>
+                        <li>OS must be > ₹1,000 (not account fragment)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VERIFIER TAB -->
+    <div id="verifier" class="tab-content">
+        <div class="container">
+            <div class="main-panel">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">✅ Verified Loans</div>
+                    </div>
+                    <div id="loansContainer">
+                        <!-- LOAN CARDS DYNAMICALLY INSERTED HERE -->
+                    </div>
+                </div>
+            </div>
+            <div class="sidebar" id="folderSidebar" style="display:none;">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">📁 <span id="folderLoanName">Loan</span> Folder</div>
+                        <button id="closeFolderBtn" class="btn btn-outline">Close</button>
+                    </div>
+                    <div class="folder-header">
+                        <strong>Borrower:</strong> <span id="folderBorrower"></span><br>
+                        <strong>Account:</strong> <span id="folderAccount"></span><br>
+                        <strong>OS:</strong> ₹<span id="folderOS"></span> | <strong>EMI:</strong> ₹<span id="folderEMI"></span><br>
+                        <strong>Status:</strong> <span id="folderStatus" class="status-badge"></span>
+                    </div>
+                    
+                    <div class="card-header" style="margin-top:10px;">
+                        <div class="card-title">📄 Documents (<span id="docCount">0</span>/5)</div>
+                    </div>
+                    <div id="docsTableContainer">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Label</th>
+                                    <th>File</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="docsTableBody">
+                                <!-- DOCUMENT ROWS DYNAMICALLY INSERTED HERE -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="card-header" style="margin-top:15px;">
+                        <div class="card-title">➕ ADD DOCUMENT</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Type</label>
+                        <select id="docType" class="form-control">
+                            <option value="statement">EMI Statement</option>
+                            <option value="interest_certificate">Interest Certificate</option>
+                            <option value="email">Email Correspondence</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Label (e.g., "2024-25 Interest Cert")</label>
+                        <input type="text" id="docLabel" class="form-control" placeholder="Human-readable label">
+                    </div>
+                    <div class="form-group">
+                        <label>File</label>
+                        <input type="file" id="docFile" class="form-control">
+                        <small style="color:#666;">⚠️ Only filename stored (no upload)</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Notes</label>
+                        <textarea id="docNotes" class="form-control" rows="2" placeholder="Optional notes"></textarea>
+                    </div>
+                    <button id="saveDocBtn" class="btn btn-primary">✅ SAVE DOCUMENT</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MANAGER TAB -->
+    <div id="manager" class="tab-content">
+        <div class="container">
+            <div class="main-panel">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">📊 Debt Manager Dashboard</div>
+                    </div>
+                    
+                    <div class="summary-box">
+                        <div>TOTAL SAVINGS POTENTIAL</div>
+                        <div class="summary-total">₹<span id="totalSavings">0</span></div>
+                        <div>(<span id="savingsPercent">0</span>% of total exposure from <span id="activeLoanCount">0</span> active loans)</div>
+                    </div>
+                    
+                    <div class="card-header">
+                        <div class="card-title">🏦 Active Loans</div>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table id="loansTable">
+                            <thead>
+                                <tr>
+                                    <th>Loan</th>
+                                    <th>Borrower</th>
+                                    <th>OS (₹)</th>
+                                    <th>EMI (₹)</th>
+                                    <th>Status</th>
+                                    <th>OTS %</th>
+                                    <th>OTS Amount (₹)</th>
+                                    <th>Saving (₹)</th>
+                                    <th>Manage</th>
+                                </tr>
+                            </thead>
+                            <tbody id="loansTableBody">
+                                <!-- LOAN ROWS DYNAMICALLY INSERTED HERE -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="lender-print-view" style="display:none;"></div>
+                    <div class="card no-print" style="margin-top:20px; background:#e3f2fd;">
+                        <div style="padding:15px;">
+                            <h3>🖨️ PRINT & SHARE INSTRUCTIONS</h3>
+                            <ol style="padding-left:20px; margin-top:10px; line-height:1.6;">
+                                <li>Click <strong>"OPEN LOAN FOLDER"</strong> for any loan to view documents</li>
+                                <li>Press <strong>Ctrl+P</strong> (Windows) or <strong>Cmd+P</strong> (Mac)</li>
+                                <li>Select <strong>"Save as PDF"</strong> as destination</li>
+                                <li>Click <strong>Save</strong> → Attach PDF to email</li>
+                                <li><strong>Email template:</strong><br>
+                                    <code>Subject: OTS Settlement Offer - [Account Number]<br><br>
+                                    Dear Sir/Madam,<br><br>
+                                    I, [Borrower Name], propose OTS settlement for Account [Account Number]<br>
+                                    under RBI guidelines (70% rule). Attached is my settlement dashboard.<br><br>
+                                    Sincerely,<br>
+                                    [Borrower Name]</code>
+                                </li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="sidebar">
+                <div class="card">
+                    <div class="card-header"><div class="card-title">💡 Manager Tips</div></div>
+                    <ul style="padding-left:20px; line-height:1.6;">
+                        <li><strong>Status:</strong> Change to "closed" when loan is settled</li>
+                        <li><strong>OTS %:</strong> Adjust per lender negotiation (default 70%)</li>
+                        <li><strong>Manage button:</strong> Opens loan folder in Verifier tab</li>
+                        <li><strong>Print:</strong> Ctrl+P → Save as PDF → Email attachment</li>
+                        <li>All data saved to browser storage (no server needed)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ======================
+        // CORE DATA MANAGEMENT
+        // ======================
+        let loans = JSON.parse(localStorage.getItem('debtEmpireLoans') || '[]');
+        let selectedLoanId = null;
+
+        /* EXTRACTOR UPGRADE: Optional extras state - human-in-the-loop, all optional */
+        window.extractorState = {
+            lenderDetails: {},
+            emiSnapshot: {},
+            extraFields: [],
+            csvEmiRows: []
+        };
+        try {
+            const saved = localStorage.getItem('debtEmpireExtractorExtras');
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (parsed.lenderDetails) window.extractorState.lenderDetails = parsed.lenderDetails;
+                if (parsed.emiSnapshot) window.extractorState.emiSnapshot = parsed.emiSnapshot;
+                if (Array.isArray(parsed.extraFields)) window.extractorState.extraFields = parsed.extraFields.slice(0, 20);
+                if (Array.isArray(parsed.csvEmiRows)) window.extractorState.csvEmiRows = parsed.csvEmiRows;
+            }
+        } catch (e) { /* skip silently */ }
+
+        // Normalize loans on load (add missing fields)
+        function normalizeLoans() {
+            loans = loans.map(loan => ({
+                ...loan,
+                status: loan.status || 'running',
+                otsPercent: loan.otsPercent !== undefined ? loan.otsPercent : 70,
+                docs: loan.docs || [],
+                id: loan.id || Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
+            }));
+            saveLoans();
+        }
+
+        function saveLoans() {
+            localStorage.setItem('debtEmpireLoans', JSON.stringify(loans));
+            console.log(`✅ Saved ${loans.length} loans to localStorage`);
+        }
+
+        function getLoans() {
+            return loans;
+        }
+
+        // ======================
+        // UI RENDERING
+        // ======================
+        function updateVerifierUI() {
+            const container = document.getElementById('loansContainer');
+            if (!container) return;
+            
+            if (loans.length === 0) {
+                container.innerHTML = `<div class="card" style="text-align:center; padding:30px; color:#757575;">
+                    <div>📭 No loans verified yet</div>
+                    <div style="margin-top:10px;">Go to "Document Extractor" tab to add your first loan</div>
+                </div>`;
+                return;
+            }
+            
+            container.innerHTML = loans.map(loan => {
+                const otsAmount = Math.round(loan.os * (loan.otsPercent / 100));
+                const saving = loan.os - otsAmount;
+                return `
+                <div class="card" style="border-left:4px solid ${loan.status === 'running' ? '#2e7d32' : loan.status === 'closed' ? '#9e9e9e' : '#f57c00'};">
+                    <div class="card-header">
+                        <div>
+                            <div style="font-weight:bold; font-size:1.2em; color:#1a237e;">${loan.name || 'Unnamed Loan'}</div>
+                            <div style="margin-top:3px; color:#555;">${loan.borrower || 'Borrower'}</div>
+                        </div>
+                        <span class="status-badge status-${loan.status}">${loan.status.toUpperCase()}</span>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-col">
+                            <div><strong>Account:</strong> ${loan.account || '<span style="color:#d32f2f">⚠️ MISSING</span>'}</div>
+                            <div><strong>OS:</strong> ₹${(loan.os || 0).toLocaleString()}</div>
+                            <div><strong>EMI:</strong> ₹${(loan.emi || 0).toLocaleString()}</div>
+                        </div>
+                        <div class="form-col">
+                            <div><strong>Disbursal:</strong> ${loan.disbursal || 'N/A'}</div>
+                            <div><strong>OTS %:</strong> ${loan.otsPercent}%</div>
+                            <div><strong>Saving:</strong> ₹${saving.toLocaleString()}</div>
+                        </div>
+                    </div>
+                    <div style="margin-top:15px; text-align:right;">
+                        <button class="btn btn-secondary open-folder-btn" data-id="${loan.id}">📁 OPEN LOAN FOLDER</button>
+                    </div>
+                </div>
+                `;
+            }).join('');
+            
+            // Attach event listeners to "OPEN LOAN FOLDER" buttons
+            document.querySelectorAll('.open-folder-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const loanId = e.target.dataset.id;
+                    openLoanFolder(loanId);
+                });
+            });
+        }
+
+        function updateManagerUI() {
+            // Update summary
+            const runningLoans = loans.filter(l => l.status === 'running');
+            const totalOS = runningLoans.reduce((sum, l) => sum + (l.os || 0), 0);
+            const totalOts = runningLoans.reduce((sum, l) => sum + (l.os || 0) * (l.otsPercent || 70) / 100, 0);
+            const totalSaving = totalOS - totalOts;
+            const savingsPercent = totalOS > 0 ? Math.round((totalSaving / totalOS) * 100) : 0;
+            
+            document.getElementById('totalSavings').textContent = totalSaving.toLocaleString();
+            document.getElementById('savingsPercent').textContent = savingsPercent;
+            document.getElementById('activeLoanCount').textContent = runningLoans.length;
+            
+            // Update loans table
+            const tbody = document.getElementById('loansTableBody');
+            if (!tbody) return;
+            
+            tbody.innerHTML = loans.map(loan => {
+                const otsAmount = Math.round(loan.os * (loan.otsPercent / 100));
+                const saving = loan.os - otsAmount;
+                return `
+                <tr>
+                    <td><strong>${(loan.name || 'Unnamed').replace(/</g, '&lt;')}</strong><br><small>${(loan.account || 'No account').replace(/</g, '&lt;')}</small></td>
+                    <td>${(loan.borrower || 'N/A').replace(/</g, '&lt;')}</td>
+                    <td>₹${(loan.os || 0).toLocaleString()}</td>
+                    <td>₹${(loan.emi || 0).toLocaleString()}</td>
+                    <td>
+                        <select class="status-select" data-id="${loan.id}" style="padding:3px; border-radius:4px;">
+                            <option value="running" ${loan.status === 'running' ? 'selected' : ''}>RUNNING</option>
+                            <option value="closed" ${loan.status === 'closed' ? 'selected' : ''}>CLOSED</option>
+                            <option value="ots" ${loan.status === 'ots' ? 'selected' : ''}>OTS</option>
+                        </select>
+                    </td>
+                    <td>
+                        <input type="number" class="ots-percent" data-id="${loan.id}" value="${loan.otsPercent}" 
+                               min="10" max="100" style="width:60px; padding:3px;">
+                    </td>
+                    <td>₹${otsAmount.toLocaleString()}</td>
+                    <td>₹${saving.toLocaleString()}</td>
+                    <td class="action-cell">
+                        <button class="btn btn-outline manage-btn" data-id="${loan.id}" title="Open in Verifier">✏️</button>
+                        <button type="button" class="btn btn-outline print-lender-pack-btn" data-id="${loan.id}" title="Print this loan only">📄 Print This Loan Only</button>
+                    </td>
+                </tr>
+                `;
+            }).join('');
+            
+            document.querySelectorAll('.print-lender-pack-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const loanId = e.target.getAttribute('data-id');
+                    if (loanId) printLenderPack(loanId);
+                });
+            });
+            
+            // Attach event listeners
+            document.querySelectorAll('.status-select').forEach(select => {
+                select.addEventListener('change', (e) => {
+                    const loanId = e.target.dataset.id;
+                    const loan = loans.find(l => l.id === loanId);
+                    if (loan) {
+                        loan.status = e.target.value;
+                        saveLoans();
+                        updateManagerUI();
+                        updateVerifierUI();
+                    }
+                });
+            });
+            
+            document.querySelectorAll('.ots-percent').forEach(input => {
+                input.addEventListener('change', (e) => {
+                    const loanId = e.target.dataset.id;
+                    const loan = loans.find(l => l.id === loanId);
+                    if (loan) {
+                        const val = parseInt(e.target.value, 10);
+                        loan.otsPercent = Math.max(10, Math.min(100, isNaN(val) ? 70 : val));
+                        saveLoans();
+                        updateManagerUI();
+                    }
+                });
+            });
+            
+            document.querySelectorAll('.manage-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const loanId = e.target.dataset.id;
+                    document.querySelector('.tab-btn[data-tab="verifier"]').click();
+                    setTimeout(() => openLoanFolder(loanId), 100);
+                });
+            });
+        }
+
+        let selectedPrintLoanId = null;
+        function printLenderPack(loanId) {
+            const loan = loans.find(l => l.id === loanId);
+            if (!loan) return;
+            selectedPrintLoanId = loanId;
+            const otsAmount = Math.round((loan.os || 0) * ((loan.otsPercent || 70) / 100));
+            const saving = (loan.os || 0) - otsAmount;
+            const fmt = (n) => (n === undefined || n === null) ? '0' : Number(n).toLocaleString('en-IN');
+            const borrower = (loan.borrower || 'N/A').replace(/</g, '&lt;');
+            const account = (loan.account || 'No account').replace(/</g, '&lt;');
+            const name = (loan.name || 'Unnamed').replace(/</g, '&lt;');
+            let html = '<div class="lender-pack-title">Debt Empire – Loan Summary for ' + borrower + ' / ' + account + '</div>';
+            html += '<div class="lender-pack-row"><strong>Borrower:</strong> ' + borrower + '</div>';
+            html += '<div class="lender-pack-row"><strong>Loan name:</strong> ' + name + '</div>';
+            html += '<div class="lender-pack-row"><strong>Account:</strong> ' + account + '</div>';
+            if (loan.lenderName) html += '<div class="lender-pack-row"><strong>Lender:</strong> ' + (loan.lenderName + '').replace(/</g, '&lt;') + '</div>';
+            html += '<div class="lender-pack-row"><strong>Outstanding (₹):</strong> ' + fmt(loan.os) + '</div>';
+            html += '<div class="lender-pack-row"><strong>EMI (₹):</strong> ' + fmt(loan.emi) + '</div>';
+            html += '<div class="lender-pack-row"><strong>OTS % to pay:</strong> ' + (loan.otsPercent || 70) + '%</div>';
+            html += '<div class="lender-pack-row"><strong>You pay (₹):</strong> ' + fmt(otsAmount) + '</div>';
+            html += '<div class="lender-pack-row"><strong>You save (₹):</strong> ' + fmt(saving) + '</div>';
+            if (loan.extraFields && loan.extraFields.length > 0) {
+                html += '<div class="lender-pack-row" style="margin-top:12px;"><strong>Details:</strong></div>';
+                loan.extraFields.forEach(f => {
+                    html += '<div class="lender-pack-row">' + (f.label || '').replace(/</g, '&lt;') + ': ' + (f.value || '').replace(/</g, '&lt;') + '</div>';
+                });
+            }
+            if (loan.docs && loan.docs.length > 0) {
+                html += '<div class="lender-pack-row" style="margin-top:12px;"><strong>Documents:</strong></div>';
+                loan.docs.forEach(d => {
+                    const label = (d.label || d.type || 'Doc').replace(/</g, '&lt;');
+                    const file = (d.fileName || '—').replace(/</g, '&lt;');
+                    html += '<div class="lender-pack-row">' + label + ' — ' + file + '</div>';
+                });
+            }
+            const el = document.getElementById('lender-print-view');
+            if (el) {
+                el.innerHTML = html;
+                el.style.display = 'block';
+                window.print();
+                el.style.display = 'none';
+            }
+        }
+
+        function openLoanFolder(loanId) {
+            const loan = loans.find(l => l.id === loanId);
+            if (!loan) return;
+            
+            selectedLoanId = loanId;
+            document.getElementById('folderSidebar').style.display = 'block';
+            document.getElementById('folderLoanName').textContent = loan.name || 'Loan';
+            document.getElementById('folderBorrower').textContent = loan.borrower || 'N/A';
+            document.getElementById('folderAccount').textContent = loan.account || 'N/A';
+            document.getElementById('folderOS').textContent = (loan.os || 0).toLocaleString();
+            document.getElementById('folderEMI').textContent = (loan.emi || 0).toLocaleString();
+            const statusEl = document.getElementById('folderStatus');
+            statusEl.textContent = (loan.status || 'running').toUpperCase();
+            statusEl.className = 'status-badge status-' + (loan.status || 'running');
+            document.getElementById('docCount').textContent = (loan.docs || []).length;
+            
+            // Render documents table
+            const tbody = document.getElementById('docsTableBody');
+            const docs = loan.docs || [];
+            tbody.innerHTML = docs.map(doc => {
+                const type = doc.type || 'other';
+                const label = (doc.label || 'Untitled').replace(/</g, '&lt;');
+                return `
+                <tr class="doc-row">
+                    <td><span class="doc-type-badge type-${type}">${(type + '').replace('_', ' ')}</span></td>
+                    <td class="editable-cell" data-id="${doc.id}" data-field="label">${label}</td>
+                    <td>${(doc.fileName || 'N/A').replace(/</g, '&lt;')}</td>
+                    <td class="action-cell">
+                        <button class="btn btn-outline edit-doc-btn" data-id="${doc.id}" title="Edit">✏️</button>
+                        <button class="btn btn-danger delete-doc-btn" data-id="${doc.id}" title="Delete">🗑️</button>
+                    </td>
+                </tr>
+            `;
+            }).join('');
+            
+            // Attach edit/delete listeners
+            document.querySelectorAll('.edit-doc-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const docId = e.target.dataset.id;
+                    const doc = docs.find(d => d.id === docId);
+                    if (doc) {
+                        document.getElementById('docType').value = doc.type || 'other';
+                        document.getElementById('docLabel').value = doc.label || '';
+                        document.getElementById('docNotes').value = doc.notes || '';
+                        alert('⚠️ To change file, delete this entry and add new document');
+                    }
+                });
+            });
+            
+            document.querySelectorAll('.delete-doc-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const docId = e.target.dataset.id;
+                    if (confirm('Delete this document?')) {
+                        loan.docs = (loan.docs || []).filter(d => d.id !== docId);
+                        saveLoans();
+                        openLoanFolder(loanId);
+                    }
+                });
+            });
+            
+            document.getElementById('folderSidebar').scrollIntoView({behavior: 'smooth'});
+            updateApplyCsvButtonState();
+        }
+
+        // ======================
+        // TAB NAVIGATION
+        // ======================
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                btn.classList.add('active');
+                const tabId = btn.dataset.tab;
+                document.getElementById(tabId).classList.add('active');
+                
+                if (tabId === 'verifier') {
+                    updateVerifierUI();
+                } else if (tabId === 'manager') {
+                    updateManagerUI();
+                } else if (tabId === 'extractor') {
+                    document.getElementById('extractionResult').style.display = 'none';
+                }
+                
+                if (tabId !== 'verifier') {
+                    document.getElementById('folderSidebar').style.display = 'none';
+                }
+            });
+        });
+
+        // ======================
+        // DOCUMENT EXTRACTION
+        // ======================
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, highlight, false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, unhighlight, false);
+        });
+        
+        function highlight() {
+            dropZone.classList.add('drag-over');
+        }
+        
+        function unhighlight() {
+            dropZone.classList.remove('drag-over');
+        }
+        
+        dropZone.addEventListener('drop', handleDrop, false);
+        dropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', handleFileSelect, false);
+
+        /* EXTRACTOR UPGRADE: Extra Fields - Add Custom Field (max 20) */
+        document.getElementById('addExtraFieldBtn').addEventListener('click', () => {
+            const container = document.getElementById('extraFieldsContainer');
+            const count = container.querySelectorAll('.extra-field-row').length;
+            if (count >= 20) return;
+            const id = 'ef_' + Date.now();
+            const row = document.createElement('div');
+            row.className = 'extra-field-row';
+            row.setAttribute('data-id', id);
+            row.innerHTML = '<input type="text" class="form-control extra-field-label" placeholder="Label (e.g. Collateral)"><textarea class="form-control extra-field-value" rows="1" placeholder="Value"></textarea><button type="button" class="btn btn-danger remove-extra-field" title="Remove">🗑</button>';
+            container.appendChild(row);
+            row.querySelector('.remove-extra-field').addEventListener('click', () => {
+                row.remove();
+            });
+        });
+
+        /* EXTRACTOR UPGRADE: CSV EMI Import - parse and show preview (no auto-save) */
+        document.getElementById('csvEmiUpload').addEventListener('change', function(e) {
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                try {
+                    const text = (ev.target && ev.target.result) || '';
+                    const lines = text.split(/\r?\n/).filter(l => l.trim());
+                    if (lines.length === 0) {
+                        document.getElementById('csvPreviewContainer').style.display = 'none';
+                        return;
+                    }
+                    const rows = [];
+                    const sep = lines[0].indexOf('\t') >= 0 ? '\t' : ',';
+                    const headerCols = lines[0].split(sep).map(c => c.toLowerCase().replace(/^"|"$/g, '').trim());
+                    let dateIdx = headerCols.findIndex(c => c.includes('date'));
+                    let amtIdx = headerCols.findIndex(c => c.includes('amount') || c.includes('emi'));
+                    let txnIdx = headerCols.findIndex(c => c.includes('txn') || c.includes('transaction'));
+                    if (dateIdx < 0) dateIdx = 0;
+                    if (amtIdx < 0) amtIdx = 1;
+                    if (txnIdx < 0) txnIdx = 2;
+                    for (let i = 1; i < lines.length; i++) {
+                        const cols = lines[i].split(sep).map(c => c.replace(/^"|"$/g, '').trim());
+                        const date = cols[dateIdx] || '';
+                        const amount = cols[amtIdx] || '';
+                        const txnId = (cols[txnIdx] || '').trim();
+                        if (!date && !amount) continue;
+                        rows.push({ date: date, amount: amount, txnId: txnId, keep: true });
+                    }
+                    if (rows.length === 0) {
+                        for (let i = 0; i < lines.length; i++) {
+                            const cols = lines[i].split(sep).map(c => c.replace(/^"|"$/g, '').trim());
+                            if (cols.length >= 2) rows.push({ date: cols[0] || '', amount: cols[1] || '', txnId: (cols[2] || '').trim(), keep: true });
+                        }
+                    }
+                    window.extractorState.csvEmiRows = rows;
+                    const tbody = document.getElementById('csvPreviewBody');
+                    tbody.innerHTML = rows.map((r, i) => '<tr><td><input type="text" class="form-control csv-date" data-i="' + i + '" value="' + (r.date || '').replace(/"/g, '&quot;') + '" style="width:120px;"></td><td><input type="text" class="form-control csv-amount" data-i="' + i + '" value="' + (r.amount || '').replace(/"/g, '&quot;') + '" style="width:100px;"></td><td><input type="text" class="form-control csv-txn" data-i="' + i + '" value="' + (r.txnId || '').replace(/"/g, '&quot;') + '" placeholder="TXN123"></td><td><input type="checkbox" class="csv-keep" data-i="' + i + '" ' + (r.keep ? 'checked' : '') + '></td></tr>').join('');
+                    tbody.querySelectorAll('.csv-date').forEach(inp => inp.addEventListener('change', function() { window.extractorState.csvEmiRows[parseInt(this.getAttribute('data-i'), 10)].date = this.value; }));
+                    tbody.querySelectorAll('.csv-amount').forEach(inp => inp.addEventListener('change', function() { window.extractorState.csvEmiRows[parseInt(this.getAttribute('data-i'), 10)].amount = this.value; }));
+                    tbody.querySelectorAll('.csv-txn').forEach(inp => inp.addEventListener('change', function() { window.extractorState.csvEmiRows[parseInt(this.getAttribute('data-i'), 10)].txnId = this.value; }));
+                    tbody.querySelectorAll('.csv-keep').forEach(inp => inp.addEventListener('change', function() { window.extractorState.csvEmiRows[parseInt(this.getAttribute('data-i'), 10)].keep = this.checked; }));
+                    document.getElementById('csvPreviewContainer').style.display = 'block';
+                } catch (err) {
+                    document.getElementById('csvPreviewContainer').style.display = 'none';
+                    alert('⚠️ Parsing incomplete - please fill manually');
+                }
+            };
+            reader.readAsText(file);
+            e.target.value = '';
+        });
+
+        function updateApplyCsvButtonState() {
+            const btn = document.getElementById('applyCsvToLoanBtn');
+            if (btn) btn.disabled = !selectedLoanId;
+        }
+
+        document.getElementById('applyCsvToLoanBtn').addEventListener('click', () => {
+            if (!selectedLoanId) return;
+            const loan = loans.find(l => l.id === selectedLoanId);
+            if (!loan) return;
+            const kept = (window.extractorState.csvEmiRows || []).filter(r => r.keep);
+            loan.csvEmiRows = kept.map(r => ({ date: r.date, amount: r.amount, txnId: r.txnId }));
+            saveLoans();
+            updateVerifierUI();
+            updateManagerUI();
+            alert('✅ Applied ' + kept.length + ' CSV row(s) to loan "' + (loan.name || '') + '"');
+        });
+        
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            handleFiles(files);
+        }
+        
+        function handleFileSelect(e) {
+            handleFiles(e.target.files);
+        }
+        
+        function handleFiles(files) {
+            if (files.length === 0) return;
+            try {
+                const file = files[0];
+                alert(`📄 Simulating extraction from ${file.name}...\n\nIn production: PDF.js/Tesseract.js would parse text here.`);
+                document.getElementById('extAccount').value = file.name.includes('baj') ? 'H400FBL0337784' : 
+                                                      file.name.includes('lt') ? 'BL240910207908339' : 
+                                                      '400CFP66425054';
+                document.getElementById('extOS').value = '4354000';
+                document.getElementById('extEMI').value = '54700';
+                document.getElementById('extDate').value = '2020-06-17';
+                document.getElementById('extType').value = 'Flexi';
+                document.getElementById('extractionResult').style.display = 'block';
+                document.getElementById('extAccount').focus();
+            } catch (e) {
+                document.getElementById('extractionResult').style.display = 'block';
+                alert('⚠️ Parsing incomplete - please fill manually');
+            }
+        }
+        
+        /* LENDER DETAILS BLOCK - OPTIONAL: sync from form to extractorState (no validation) */
+        function syncExtractorStateFromForm() {
+            try {
+                window.extractorState.lenderDetails = {
+                    name: (document.getElementById('extLenderName') && document.getElementById('extLenderName').value) ? document.getElementById('extLenderName').value.trim() : '',
+                    branch: (document.getElementById('extLenderBranch') && document.getElementById('extLenderBranch').value) ? document.getElementById('extLenderBranch').value.trim() : '',
+                    rm: (document.getElementById('extLenderRM') && document.getElementById('extLenderRM').value) ? document.getElementById('extLenderRM').value.trim() : '',
+                    contact: (document.getElementById('extLenderContact') && document.getElementById('extLenderContact').value) ? document.getElementById('extLenderContact').value.trim() : ''
+                };
+            } catch (e) { /* skip */ }
+            try {
+                const emiNum = document.getElementById('extEmiNumber');
+                const emiDate = document.getElementById('extEmiDate');
+                const amountPaid = document.getElementById('extEmiAmountPaid');
+                const principal = document.getElementById('extEmiPrincipal');
+                const interest = document.getElementById('extEmiInterest');
+                const txnId = document.getElementById('extEmiTxnId');
+                window.extractorState.emiSnapshot = {
+                    emiNumber: emiNum ? emiNum.value : '',
+                    emiDate: emiDate ? emiDate.value : '',
+                    amountPaid: amountPaid ? amountPaid.value : '',
+                    principalPart: principal ? principal.value : '',
+                    interestPart: interest ? interest.value : '',
+                    transactionId: txnId ? txnId.value.trim() : ''
+                };
+            } catch (e) { /* skip */ }
+            try {
+                const rows = document.querySelectorAll('#extraFieldsContainer .extra-field-row');
+                window.extractorState.extraFields = [];
+                rows.forEach((row, i) => {
+                    if (i >= 20) return;
+                    const id = row.getAttribute('data-id');
+                    const labelInp = row.querySelector('.extra-field-label');
+                    const valueInp = row.querySelector('.extra-field-value');
+                    if (id && labelInp && valueInp) window.extractorState.extraFields.push({ id: id, label: labelInp.value.trim(), value: valueInp.value.trim() });
+                });
+            } catch (e) { /* skip */ }
+        }
+
+        // Save extraction to loan (CORE: only Account + OS required; extras saved separately)
+        document.getElementById('saveExtractBtn').addEventListener('click', () => {
+            const account = document.getElementById('extAccount').value.trim();
+            const os = parseInt(document.getElementById('extOS').value, 10) || 0;
+            
+            if (!account) {
+                alert('⚠️ Account Number is REQUIRED. Check document header.');
+                document.getElementById('extAccount').focus();
+                return;
+            }
+            
+            if (os < 1000) {
+                alert('⚠️ OS amount must be > ₹1,000. Verify extraction.');
+                document.getElementById('extOS').focus();
+                return;
+            }
+            
+            syncExtractorStateFromForm();
+            try {
+                localStorage.setItem('debtEmpireExtractorExtras', JSON.stringify(window.extractorState));
+            } catch (e) { /* skip */ }
+            
+            const borrower = document.getElementById('extBorrower').value;
+            const date = document.getElementById('extDate').value;
+            const loanName = account.includes('H400FBL') ? 'bjmagnarepay' + (loans.filter(l => l.name && l.name.startsWith('bjmagnarepay')).length + 1) :
+                          account.includes('BL2409') ? 'lt908' :
+                          account.includes('400CFP') ? 'loan_' + Date.now().toString().slice(-6) : 
+                          borrower.toLowerCase().replace(/\s+/g, '_').slice(0,6) + '_' + (date ? date.replace(/-/g, '').slice(2, 8) : '000000');
+            
+            const newLoan = {
+                id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
+                name: loanName,
+                borrower: borrower,
+                account: account,
+                os: os,
+                emi: parseInt(document.getElementById('extEMI').value, 10) || 0,
+                disbursal: document.getElementById('extDate').value,
+                type: document.getElementById('extType').value,
+                status: 'running',
+                otsPercent: 70,
+                docs: [{
+                    id: Date.now().toString(),
+                    type: (document.getElementById('extDocType').value || 'Other').replace(/\s+/g, '_').toLowerCase(),
+                    label: document.getElementById('extDocType').value,
+                    fileName: fileInput.files[0] ? fileInput.files[0].name : 'extracted_document',
+                    addedAt: new Date().toISOString(),
+                    notes: 'Added via Document Extractor'
+                }],
+                addedAt: new Date().toISOString()
+            };
+            
+            loans.push(newLoan);
+            saveLoans();
+            
+            document.querySelector('.tab-btn[data-tab="verifier"]').click();
+            setTimeout(() => {
+                alert(`✅ Loan "${newLoan.name}" saved!\n\nNext: Click "OPEN LOAN FOLDER" to add more documents.`);
+                updateVerifierUI();
+            }, 100);
+        });
+        
+        // ======================
+        // DOCUMENT MANAGEMENT
+        // ======================
+        document.getElementById('closeFolderBtn').addEventListener('click', () => {
+            document.getElementById('folderSidebar').style.display = 'none';
+            selectedLoanId = null;
+            updateApplyCsvButtonState();
+        });
+        
+        document.getElementById('saveDocBtn').addEventListener('click', () => {
+            if (!selectedLoanId) return;
+            
+            const loan = loans.find(l => l.id === selectedLoanId);
+            if (!loan) return;
+            
+            const docFileInput = document.getElementById('docFile');
+            if (!docFileInput.files || docFileInput.files.length === 0) {
+                alert('⚠️ Please select a file (filename will be stored)');
+                return;
+            }
+            
+            if (!loan.docs) loan.docs = [];
+            if (loan.docs.length >= 5) {
+                alert('⚠️ Maximum 5 documents per loan. Remove one to add more.');
+                return;
+            }
+            
+            const newDoc = {
+                id: Date.now().toString(),
+                type: document.getElementById('docType').value,
+                label: document.getElementById('docLabel').value.trim() || document.getElementById('docType').options[document.getElementById('docType').selectedIndex].text,
+                fileName: docFileInput.files[0].name,
+                addedAt: new Date().toISOString(),
+                notes: document.getElementById('docNotes').value.trim()
+            };
+            
+            loan.docs.push(newDoc);
+            saveLoans();
+            openLoanFolder(selectedLoanId);
+            
+            document.getElementById('docLabel').value = '';
+            document.getElementById('docNotes').value = '';
+            document.getElementById('docFile').value = '';
+            alert(`✅ Document "${newDoc.label}" added to ${loan.name}`);
+        });
+        
+        // ======================
+        // INITIALIZE
+        // ======================
+        document.addEventListener('DOMContentLoaded', () => {
+            normalizeLoans();
+            updateVerifierUI();
+            updateManagerUI();
+            updateApplyCsvButtonState();
+            
+            const today = new Date().toISOString().split('T')[0];
+            const extDateEl = document.getElementById('extDate');
+            if (extDateEl) extDateEl.value = today;
+            
+            /* EXTRACTOR UPGRADE: Restore extra fields from saved state (optional) */
+            const container = document.getElementById('extraFieldsContainer');
+            if (container && window.extractorState.extraFields && window.extractorState.extraFields.length > 0) {
+                window.extractorState.extraFields.slice(0, 20).forEach(f => {
+                    const row = document.createElement('div');
+                    row.className = 'extra-field-row';
+                    row.setAttribute('data-id', f.id || 'ef_' + Date.now());
+                    const labelVal = (f.label || '').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+                    const valueVal = (f.value || '').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+                    row.innerHTML = '<input type="text" class="form-control extra-field-label" placeholder="Label" value="' + labelVal + '"><textarea class="form-control extra-field-value" rows="1" placeholder="Value">' + valueVal + '</textarea><button type="button" class="btn btn-danger remove-extra-field" title="Remove">🗑</button>';
+                    container.appendChild(row);
+                    row.querySelector('.remove-extra-field').addEventListener('click', () => row.remove());
+                });
+            }
+            
+            console.log('✅ Debt Empire v3.2 Senior Arbitrage Manager loaded');
+            console.log(`📊 ${loans.length} loans in storage`);
+        });
+    </script>
+</body>
+</html>

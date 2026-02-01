@@ -1,0 +1,19 @@
+{
+  "name": "debt-empire-frontend",
+  "version": "2.0.0",
+  "description": "Debt Empire v2.0 - Frontend Dashboard",
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start -p 3000"
+  },
+  "dependencies": {
+    "next": "^14.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.2.0"
+  }
+}

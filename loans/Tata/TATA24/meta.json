@@ -1,0 +1,13 @@
+{
+  "provider": "Tata",
+  "product": "",
+  "account_number": "TATA24",
+  "linked_account": "",
+  "borrower_name": "",
+  "outstanding_principal": 320000,
+  "emi_amount": 15000,
+  "tenure_remaining_months": 21,
+  "loan_type": "personal",
+  "verification_status": "pending",
+  "updated_at": "2026-01-29T15:26:26.534864"
+}

@@ -1,0 +1,13 @@
+{
+  "provider": "HDFC",
+  "product": "",
+  "account_number": "HDFC24LOAN1",
+  "linked_account": "",
+  "borrower_name": "",
+  "outstanding_principal": 2450000,
+  "emi_amount": 189000,
+  "tenure_remaining_months": 13,
+  "loan_type": "personal",
+  "verification_status": "pending",
+  "updated_at": "2026-01-29T15:26:26.534864"
+}

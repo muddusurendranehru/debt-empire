@@ -1,0 +1,27 @@
+STEP-BY-STEP: ADD NEW LOAN (PowerShell)
+======================================
+
+1. Drag your documents into new_uploads/
+   • Put your PDF here: debt-empire\loans\new_uploads\
+   • Example: bjmagnarepay1.pdf
+
+2. Open PowerShell and run:
+   cd "C:\Users\MYPC\Desktop\debt-arbitrage\debt-empire"
+   py loan_verifier.py
+
+3. In the verifier:
+   • Enter choice [1-4]: 1   (Verify new loan)
+   • Enter choice [1-4]: 1   (Parse Bajaj PDF)
+   • PDF path: bjmagnarepay1.pdf   (or your filename)
+   • Complete the wizard → Y to save
+
+4. Regenerate dashboard:
+   py empire.py
+
+5. Open dashboard and print/email:
+   start dashboard.html
+   → Ctrl+P → Save as PDF → Email
+
+OR run the all-in-one script:
+   .\ADD_NEW_LOAN.ps1
+   (Opens this folder, then runs verifier → empire → dashboard)

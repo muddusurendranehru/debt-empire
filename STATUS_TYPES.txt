@@ -1,0 +1,18 @@
+================================================================================
+5 LOAN STATUS TYPES (masters.json) — REFERENCE ONLY (do not destroy success)
+================================================================================
+
+CLOSED (OS=0): Keep merit folder, exclude OTS
+
+PARTIAL (prepaid): % paid, re-check OS
+
+NEW_DISBURSED (not received): OS=0 hold
+
+RUNNING_PAID_EMI: OTS target (clinic closed)
+
+NEGOTIATING: Offer sent
+
+================================================================================
+OTS: Include RUNNING_PAID_EMI, PARTIAL, NEGOTIATING only.
+     Exclude CLOSED, NEW_DISBURSED.
+================================================================================

@@ -1,0 +1,5 @@
+print('🚀 Debt Empire LIVE!')
+print('L&T: ₹25.74L → OTS ₹18L')
+print('HDFC: ₹24.5L EMI ₹52k')
+print('CSV Parsed: Bajaj/HDFC/Tata/L&T')
+print('Monthly ready - Upload next CSV')

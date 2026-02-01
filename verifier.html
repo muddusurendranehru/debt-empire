@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debt Empire - MASTER DASHBOARD</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        .header .subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .stat-card .label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+        
+        .stat-card .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1e3c72;
+        }
+        
+        .actions-bar {
+            padding: 20px 25px;
+            background: #fff;
+            border-bottom: 2px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+        
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+        
+        .btn-info:hover {
+            background: #138496;
+            transform: translateY(-2px);
+        }
+        
+        .btn-print {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-print:hover {
+            background: #5a6268;
+        }
+        
+        .table-container {
+            padding: 25px;
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+        
+        thead {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+        }
+        
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .shortcode {
+            font-family: 'Courier New', monospace;
+            background: #e3f2fd;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            color: #1976d2;
+        }
+        
+        .lender {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .amount {
+            font-weight: 600;
+            color: #1e3c72;
+        }
+        
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+            margin: 2px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        
+        .empty-state h2 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .tree-section {
+            padding: 20px 25px;
+            background: #f0f4f8;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .tree-section h2 {
+            font-size: 16px;
+            color: #1e3c72;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .tree-block {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            background: #fff;
+            padding: 15px 20px;
+            border-radius: 8px;
+            border: 1px solid #d0d7de;
+            overflow-x: auto;
+            white-space: pre;
+            color: #24292f;
+        }
+        
+        .print-only-title {
+            display: none;
+        }
+        
+        .ots-targets, .closed-section, .tree-branches {
+            padding: 18px 25px;
+            background: #fff;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .ots-targets {
+            background: #f0fdf4;
+            border-left: 4px solid #22c55e;
+        }
+        
+        .closed-section {
+            background: #fef2f2;
+            border-left: 4px solid #ef4444;
+        }
+        
+        .tree-branches {
+            background: #f8fafc;
+            border-left: 4px solid #3b82f6;
+        }
+        
+        .ots-targets h2, .closed-section h2, .tree-branches h2 {
+            font-size: 15px;
+            margin-bottom: 12px;
+            color: #1e3c72;
+        }
+        
+        .ots-row, .closed-row {
+            padding: 8px 0;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .ots-row .shortcode {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            color: #166534;
+        }
+        
+        .branch-block {
+            font-family: 'Consolas', monospace;
+            font-size: 12px;
+            background: #fff;
+            padding: 12px 16px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 12px;
+            white-space: pre-wrap;
+        }
+        
+        .branch-block .branch-name {
+            font-weight: bold;
+            color: #1e40af;
+            margin-bottom: 6px;
+        }
+        
+        @media print {
+            body {
+                background: white;
+                padding: 10mm;
+                font-size: 11pt;
+            }
+            
+            .container {
+                box-shadow: none;
+                border-radius: 0;
+                max-width: 100%;
+            }
+            
+            .actions-bar, .btn {
+                display: none !important;
+            }
+            
+            .print-only-title {
+                display: block !important;
+                text-align: center;
+                font-size: 20pt;
+                font-weight: bold;
+                padding: 10mm 0 5mm;
+                color: #000;
+                border-bottom: 2px solid #000;
+                margin-bottom: 5mm;
+            }
+            
+            .header {
+                display: none;
+            }
+            
+            .stats-bar {
+                page-break-inside: avoid;
+                margin-bottom: 5mm;
+            }
+            
+            .ots-targets, .closed-section {
+                page-break-inside: avoid;
+                border-left: none;
+                border: 1px solid #ccc;
+                padding: 3mm;
+                margin-bottom: 3mm;
+            }
+            
+            .ots-targets h2, .closed-section h2 {
+                font-size: 12pt;
+                margin-bottom: 2mm;
+            }
+            
+            .tree-branches {
+                page-break-inside: avoid;
+                border: 1px solid #ccc;
+                padding: 3mm;
+            }
+            
+            .tree-section {
+                background: #fff;
+                border: 1px solid #ccc;
+                padding: 3mm;
+                page-break-inside: avoid;
+            }
+            
+            .tree-block, .branch-block {
+                background: #fff;
+                border: none;
+                font-size: 9pt;
+                padding: 2mm;
+            }
+            
+            table {
+                page-break-inside: auto;
+                font-size: 9pt;
+            }
+            
+            tr {
+                page-break-inside: avoid;
+                page-break-after: auto;
+            }
+            
+            thead {
+                background: #1e3c72 !important;
+                color: white !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            
+            .subtitle {
+                display: none;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 24px;
+            }
+            
+            .stats-bar {
+                grid-template-columns: 1fr;
+            }
+            
+            .tree-section, .ots-targets, .closed-section, .tree-branches {
+                padding: 15px;
+            }
+            
+            .tree-block, .branch-block {
+                font-size: 11px;
+                padding: 12px;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            .ots-row, .closed-row {
+                font-size: 13px;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 4px;
+            }
+            
+            table {
+                font-size: 12px;
+            }
+            
+            th, td {
+                padding: 10px 8px;
+            }
+            
+            .btn {
+                padding: 10px 16px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💰 Debt Empire - MASTER DASHBOARD</h1>
+            <div class="subtitle">Generated: 30 January 2026 10:08 PM</div>
+        </div>
+        
+        <div class="print-only-title">OTS Portfolio Dr. Nehru</div>
+        
+        <div class="stats-bar">
+            <div class="stat-card">
+                <div class="label">Total Exposure</div>
+                <div class="value">Rs 61.34L</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">OTS Liability (70%)</div>
+                <div class="value">Rs 42.94L</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Total Savings</div>
+                <div class="value">Rs 18.40L</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Monthly EMI</div>
+                <div class="value">Rs 319,000</div>
+            </div>
+        </div>
+        
+        <div class="ots-targets">
+            <h2>🟢 OTS TARGETS (RUNNING loans only)</h2>
+
+            <div class="ots-row">
+                <span class="shortcode">lt26L</span>
+                <span>(₹25.7L, 42.0%)</span>
+                <span>→</span>
+                <a href="javascript:void(0)" onclick="showDeepEdit('lt26L', 'L&T', 'BL240910207908339')" style="color:#166534; text-decoration:underline; font-weight:600;">Edit</a>
+                <span>|</span>
+                <a href="ots-pdfs/lt-ots.html" target="_blank" style="color:#166534; text-decoration:underline;">OTS Letter</a>
+                <span>|</span>
+                <a href="javascript:void(0)" onclick="alert('OS Today: ₹2,574,000\nAccount: BL240910207908339\nProvider: L&T')" style="color:#166534; text-decoration:underline;">OS Today?</a>
+            </div>
+
+            <div class="ots-row">
+                <span class="shortcode">hdf24L</span>
+                <span>(₹24.5L, 39.9%)</span>
+                <span>→</span>
+                <a href="javascript:void(0)" onclick="showDeepEdit('hdf24L', 'HDFC', 'HDFC24LOAN1')" style="color:#166534; text-decoration:underline; font-weight:600;">Edit</a>
+                <span>|</span>
+                <a href="ots-pdfs/hdfc-ots.html" target="_blank" style="color:#166534; text-decoration:underline;">OTS Letter</a>
+                <span>|</span>
+                <a href="javascript:void(0)" onclick="alert('OS Today: ₹2,450,000\nAccount: HDFC24LOAN1\nProvider: HDFC')" style="color:#166534; text-decoration:underline;">OS Today?</a>
+            </div>
+
+            <div class="ots-row">
+                <span class="shortcode">tat3L</span>
+                <span>(₹3.2L, 5.2%)</span>
+                <span>→</span>
+                <a href="javascript:void(0)" onclick="showDeepEdit('tat3L', 'Tata', 'TATA24')" style="color:#166534; text-decoration:underline; font-weight:600;">Edit</a>
+                <span>|</span>
+                <a href="ots-pdfs/tata-ots.html" target="_blank" style="color:#166534; text-decoration:underline;">OTS Letter</a>
+                <span>|</span>
+                <a href="javascript:void(0)" onclick="alert('OS Today: ₹320,000\nAccount: TATA24\nProvider: Tata')" style="color:#166534; text-decoration:underline;">OS Today?</a>
+            </div>
+
+            <div class="ots-row">
+                <span class="shortcode">baj8L</span>
+                <span>(₹7.9L, 12.9%)</span>
+                <span>→</span>
+                <a href="javascript:void(0)" onclick="showDeepEdit('baj8L', 'Bajaj', 'BAJAJ24')" style="color:#166534; text-decoration:underline; font-weight:600;">Edit</a>
+                <span>|</span>
+                <a href="ots-pdfs/bajaj-ots.html" target="_blank" style="color:#166534; text-decoration:underline;">OTS Letter</a>
+                <span>|</span>
+                <a href="javascript:void(0)" onclick="alert('OS Today: ₹790,000\nAccount: BAJAJ24\nProvider: Bajaj')" style="color:#166534; text-decoration:underline;">OS Today?</a>
+            </div>
+
+            <div class="ots-row" style="margin-top:10px; padding-top:10px; border-top:1px solid #d1fae5; font-weight:bold;">
+                <span>Total: ₹61.3L</span>
+                <span>→</span>
+                <span>80% OTS ₹49.1L</span>
+                <span>(Start ₹16L)</span>
+                <span style="color:#666; font-size:12px; margin-left:10px;">(CLOSED loans excluded)</span>
+            </div>
+
+        </div>
+        
+        <div class="closed-section">
+            <h2>🔴 CLOSED (Merit proof)</h2>
+
+            <div class="closed-row">None</div>
+
+        </div>
+        
+        <div class="tree-branches">
+            <h2>📁 TREE VIEW (branches)</h2>
+
+            <div class="branch-block">
+                <div class="branch-name">lt26L/</div>meta.json
+docs/ (empty)
+Add New → Upload (e.g. smart_stmt_new.pdf)
+            </div>
+
+            <div class="branch-block">
+                <div class="branch-name">hdf24L/</div>meta.json
+docs/ (empty)
+Add New → Upload (e.g. smart_stmt_new.pdf)
+            </div>
+
+            <div class="branch-block">
+                <div class="branch-name">tat3L/</div>meta.json
+docs/ (empty)
+Add New → Upload (e.g. smart_stmt_new.pdf)
+            </div>
+
+            <div class="branch-block">
+                <div class="branch-name">baj8L/</div>meta.json
+docs/ (empty)
+Add New → Upload (e.g. smart_stmt_new.pdf)
+            </div>
+
+        </div>
+        
+        <div class="actions-bar">
+            <button class="btn btn-print" onclick="window.print()">🖨️ PRINT: Ctrl+P → "OTS Portfolio Dr. Nehru"</button>
+            <a href="javascript:void(0)" class="btn btn-success" onclick="showEmailInstructions()">📧 EMAIL: Batch OTS (5L start each)</a>
+            <a href="javascript:void(0)" class="btn btn-success" onclick="showEditInstructions()">✏️ EDIT: Status/OS/Notes → Save masters.json</a>
+            <a href="javascript:void(0)" class="btn btn-primary" onclick="showAddLoanInstructions()">➕ ADD LOAN: New branch + shortcode</a>
+            <a href="javascript:void(0)" class="btn btn-info" onclick="showRunEmpireInstructions()">🚀 Run Empire</a>
+            <a href="dashboard.html" class="btn btn-primary" target="_blank">📊 Dashboard</a>
+        </div>
+        
+        <div class="tree-section">
+            <h2>📁 Folder tree (loans / archive)</h2>
+            <pre class="tree-block">{tree_html}</pre>
+        </div>
+        
+        <div id="instructions-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:1000; align-items:center; justify-content:center;">
+            <div style="background:white; padding:30px; border-radius:10px; max-width:500px; box-shadow:0 10px 40px rgba(0,0,0,0.3);">
+                <h2 style="margin-bottom:15px; color:#1e3c72;">How to Edit Loans</h2>
+                <div style="margin-bottom:20px; line-height:1.8;">
+                    <p><strong>Step 1:</strong> Open PowerShell</p>
+                    <p><strong>Step 2:</strong> Navigate to folder:</p>
+                    <code style="background:#f5f5f5; padding:8px 12px; display:block; border-radius:5px; margin:10px 0;">cd C:\Users\MYPC\Desktop\debt-arbitrage\debt-empire</code>
+                    <p><strong>Step 3:</strong> Run verifier:</p>
+                    <code style="background:#f5f5f5; padding:8px 12px; display:block; border-radius:5px; margin:10px 0;">py loan_verifier.py</code>
+                    <p style="margin-top:15px;"><strong>Or double-click:</strong> <code>RUN_VERIFIER.ps1</code></p>
+                </div>
+                <button onclick="closeInstructions()" class="btn btn-primary" style="width:100%;">Got it!</button>
+            </div>
+        </div>
+        
+        <div class="table-container">
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Shortcode</th>
+                        <th>Lender</th>
+                        <th>Outstanding</th>
+                        <th>EMI</th>
+                        <th>Tenure</th>
+                        <th>Fees</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                    <tr>
+                        <td><span class="shortcode">l&t908339</span></td>
+                        <td><span class="lender">L&T</span></td>
+                        <td><span class="amount">Rs 25.74L</span></td>
+                        <td>Rs 80,000</td>
+                        <td>32 months</td>
+                        <td>Rs 0</td>
+                        <td>
+                            <button class="btn btn-small btn-info" onclick="alert('Loan: l&t908339\nBorrower: \nAccount: BL240910207908339')">ℹ️ Info</button>
+                            <button class="btn btn-small btn-success" onclick="window.open('ots-pdfs/lt-ots.html', '_blank')">📧 Email OTS</button>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td><span class="shortcode">hdf4loan1</span></td>
+                        <td><span class="lender">HDFC</span></td>
+                        <td><span class="amount">Rs 24.50L</span></td>
+                        <td>Rs 189,000</td>
+                        <td>13 months</td>
+                        <td>Rs 0</td>
+                        <td>
+                            <button class="btn btn-small btn-info" onclick="alert('Loan: hdf4loan1\nBorrower: \nAccount: HDFC24LOAN1')">ℹ️ Info</button>
+                            <button class="btn btn-small btn-success" onclick="window.open('ots-pdfs/hdfc-ots.html', '_blank')">📧 Email OTS</button>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td><span class="shortcode">tattata24</span></td>
+                        <td><span class="lender">Tata</span></td>
+                        <td><span class="amount">Rs 3.20L</span></td>
+                        <td>Rs 15,000</td>
+                        <td>21 months</td>
+                        <td>Rs 0</td>
+                        <td>
+                            <button class="btn btn-small btn-info" onclick="alert('Loan: tattata24\nBorrower: \nAccount: TATA24')">ℹ️ Info</button>
+                            <button class="btn btn-small btn-success" onclick="window.open('ots-pdfs/tata-ots.html', '_blank')">📧 Email OTS</button>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td><span class="shortcode">bajajaj24</span></td>
+                        <td><span class="lender">Bajaj</span></td>
+                        <td><span class="amount">Rs 7.90L</span></td>
+                        <td>Rs 35,000</td>
+                        <td>23 months</td>
+                        <td>Rs 0</td>
+                        <td>
+                            <button class="btn btn-small btn-info" onclick="alert('Loan: bajajaj24\nBorrower: \nAccount: BAJAJ24')">ℹ️ Info</button>
+                            <button class="btn btn-small btn-success" onclick="window.open('ots-pdfs/bajaj-ots.html', '_blank')">📧 Email OTS</button>
+                        </td>
+                    </tr>
+
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+    
+    <script>
+        // Print keyboard shortcut
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+                e.preventDefault();
+                window.print();
+            }
+        });
+        
+        // Show edit instructions (general)
+        function showEditInstructions() {
+            document.getElementById('instructions-modal').style.display = 'flex';
+            document.getElementById('instructions-modal').querySelector('h2').textContent = 'How to Edit Loans';
+            document.getElementById('instructions-modal').querySelector('div').innerHTML = `
+                <p><strong>Step 1:</strong> Open PowerShell</p>
+                <p><strong>Step 2:</strong> Navigate to folder:</p>
+                <code style="background:#f5f5f5; padding:8px 12px; display:block; border-radius:5px; margin:10px 0; font-size:12px;">cd C:\Users\MYPC\Desktop\debt-arbitrage\debt-empire</code>
+                <p><strong>Step 3:</strong> Run verifier:</p>
+                <code style="background:#f5f5f5; padding:8px 12px; display:block; border-radius:5px; margin:10px 0; font-size:12px;">py loan_verifier.py</code>
+                <p style="margin-top:15px;"><strong>Or double-click:</strong> <code>RUN_VERIFIER.ps1</code></p>
+                <p style="margin-top:15px; color:#666; font-size:13px;">In the menu, choose:<br>• Option 2: Review existing loans<br>• Option 3: Edit loan details<br>• Set status=CLOSED to exclude from OTS totals</p>
+            `;
+        }
+        
+        // Deep edit: loan-specific instructions
+        function showDeepEdit(shortcode, lender, account) {
+            document.getElementById('instructions-modal').style.display = 'flex';
+            document.getElementById('instructions-modal').querySelector('h2').textContent = '✏️ Deep Edit: ' + shortcode;
+            document.getElementById('instructions-modal').querySelector('div').innerHTML = `
+                <p><strong>Loan:</strong> <code>${shortcode}</code> (${lender})</p>
+                <p><strong>Account:</strong> <code>${account}</code></p>
+                <hr style="margin:15px 0; border:1px solid #e0e0e0;">
+                <p><strong>Step 1:</strong> Open PowerShell</p>
+                <p><strong>Step 2:</strong> Navigate to folder:</p>
+                <code style="background:#f5f5f5; padding:8px 12px; display:block; border-radius:5px; margin:10px 0; font-size:12px;">cd C:\Users\MYPC\Desktop\debt-arbitrage\debt-empire</code>
+                <p><strong>Step 3:</strong> Run verifier:</p>
+                <code style="background:#f5f5f5; padding:8px 12px; display:block; border-radius:5px; margin:10px 0; font-size:12px;">py loan_verifier.py</code>
+                <p style="margin-top:15px;"><strong>In menu:</strong></p>
+                <ul style="margin:10px 0; padding-left:20px; line-height:1.8;">
+                    <li>Option 2: Review existing loans</li>
+                    <li>Find: <code>${shortcode}</code> or Account: <code>${account}</code></li>
+                    <li>Option 3: Edit loan details</li>
+                    <li>Update: Status, OS, Notes → Save to masters.json</li>
+                </ul>
+                <p style="margin-top:15px; color:#d32f2f; font-size:13px;"><strong>Tip:</strong> Set status=CLOSED to exclude from OTS totals (Total drops)</p>
+            `;
+        }
+        
+        // Show run empire instructions
+        function showRunEmpireInstructions() {
+            document.getElementById('instructions-modal').style.display = 'flex';
+            document.getElementById('instructions-modal').querySelector('h2').textContent = 'How to Run Empire';
+            document.getElementById('instructions-modal').querySelector('div').innerHTML = `
+                <p><strong>Step 1:</strong> Open PowerShell</p>
+                <p><strong>Step 2:</strong> Navigate to folder:</p>
+                <code style="background:#f5f5f5; padding:8px 12px; display:block; border-radius:5px; margin:10px 0; font-size:12px;">cd C:\Users\MYPC\Desktop\debt-arbitrage\debt-empire</code>
+                <p><strong>Step 3:</strong> Run analyzer:</p>
+                <code style="background:#f5f5f5; padding:8px 12px; display:block; border-radius:5px; margin:10px 0; font-size:12px;">py empire.py</code>
+                <p style="margin-top:15px;"><strong>Or double-click:</strong> <code>RUN.ps1</code></p>
+                <p style="margin-top:15px; color:#666; font-size:13px;">This generates all reports: dashboard, projections, OTS letters</p>
+            `;
+        }
+        
+        // Show email instructions
+        function showEmailInstructions() {
+            document.getElementById('instructions-modal').style.display = 'flex';
+            document.getElementById('instructions-modal').querySelector('h2').textContent = '📧 Batch OTS Email';
+            document.getElementById('instructions-modal').querySelector('div').innerHTML = `
+                <p><strong>Batch OTS Strategy:</strong></p>
+                <p style="margin-top:10px;">Send OTS letters to all lenders with:</p>
+                <ul style="margin:10px 0; padding-left:20px; line-height:1.8;">
+                    <li>Start amount: ₹5L each (or as per negotiation)</li>
+                    <li>OTS at 80% of outstanding (or 70% per RBI)</li>
+                    <li>Attach OTS letters from <code>ots-pdfs/</code> folder</li>
+                </ul>
+                <p style="margin-top:15px;"><strong>Files:</strong> Open <code>ots-pdfs/</code> folder and attach HTML/PDF OTS letters</p>
+                <p style="margin-top:10px; color:#666; font-size:13px;">Tip: Use email templates for consistent communication</p>
+            `;
+        }
+        
+        // Show add loan instructions
+        function showAddLoanInstructions() {
+            document.getElementById('instructions-modal').style.display = 'flex';
+            document.getElementById('instructions-modal').querySelector('h2').textContent = '➕ Add New Loan';
+            document.getElementById('instructions-modal').querySelector('div').innerHTML = `
+                <p><strong>Step 1:</strong> Open PowerShell</p>
+                <p><strong>Step 2:</strong> Navigate to folder:</p>
+                <code style="background:#f5f5f5; padding:8px 12px; display:block; border-radius:5px; margin:10px 0; font-size:12px;">cd C:\Users\MYPC\Desktop\debt-arbitrage\debt-empire</code>
+                <p><strong>Step 3:</strong> Run verifier:</p>
+                <code style="background:#f5f5f5; padding:8px 12px; display:block; border-radius:5px; margin:10px 0; font-size:12px;">py loan_verifier.py</code>
+                <p style="margin-top:15px;"><strong>Or double-click:</strong> <code>RUN_VERIFIER.ps1</code></p>
+                <p style="margin-top:15px; color:#666; font-size:13px;">In the menu, choose:<br>• Option 1: Add new loan<br>• This creates a new branch in <code>loans/</code> with shortcode</p>
+            `;
+        }
+        
+        // Close instructions modal
+        function closeInstructions() {
+            document.getElementById('instructions-modal').style.display = 'none';
+        }
+        
+        // Close modal on outside click
+        document.getElementById('instructions-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeInstructions();
+            }
+        });
+        
+        // Auto-refresh every 5 minutes
+        setTimeout(function() {
+            location.reload();
+        }, 300000);
+    </script>
+</body>
+</html>

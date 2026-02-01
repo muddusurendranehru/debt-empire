@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Debt Empire Dashboard</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 800px; margin: 30px auto; background: #f8f9fa; color: #333; }
+        .container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.08); }
+        .header { text-align: center; border-bottom: 3px solid #2e7d32; padding-bottom: 20px; margin-bottom: 25px; }
+        .header h1 { color: #1b5e20; margin: 0; font-size: 28px; }
+        .header .subtitle { color: #555; margin-top: 8px; }
+        table { width: 100%; border-collapse: collapse; margin: 25px 0; }
+        th { background: #2e7d32; color: white; padding: 14px 12px; text-align: center; font-weight: 600; }
+        td { padding: 11px 12px; text-align: center; border-bottom: 1px solid #e0e0e0; }
+        tr:hover td { background: #f5f9f5; }
+        .total-row { font-weight: bold; background: #fff9c4 !important; }
+        .total-row td { border-top: 2px solid #555; }
+        .action-box { background: #e8f5e9; border-left: 5px solid #4caf50; padding: 20px; margin: 30px 0; border-radius: 0 8px 8px 0; }
+        .action-text { color: #1b5e20; font-weight: 600; font-size: 18px; margin: 0; }
+        .footer { text-align: center; margin-top: 30px; color: #777; font-size: 0.9em; padding-top: 15px; border-top: 1px solid #eee; }
+        .badge { display: inline-block; background: #1976d2; color: white; padding: 3px 10px; border-radius: 12px; font-size: 0.85em; }
+        @media print {
+            body { background: white; }
+            .container { box-shadow: none; padding: 15px; }
+            .no-print { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>DEBT EMPIRE: RBI OTS SETTLEMENT DASHBOARD</h1>
+            <div class="subtitle">Generated: 30 January 2026 10:08 PM</div>
+        </div>
+        
+        <table>
+            <tr>
+                <th>Loan Provider</th>
+                <th>OS (Rs L)</th>
+                <th>OTS 70% (Rs L)</th>
+                <th>Savings (Rs L)</th>
+                <th>Account Ref</th>
+            </tr>
+            <tr><td>L&T Financial</td><td>25.74</td><td>18.02</td><td>7.72</td><td class="badge">BL240910207908339</td></tr>
+            <tr><td>HDFC Bank</td><td>24.50</td><td>17.15</td><td>7.35</td><td class="badge">HDFC24LOAN1</td></tr>
+            <tr><td>Tata Capital</td><td>3.20</td><td>2.24</td><td>0.96</td><td class="badge">TATA24</td></tr>
+            <tr><td>Bajaj Finance</td><td>7.90</td><td>5.53</td><td>2.37</td><td class="badge">BAJAJ24</td></tr>
+            <tr class="total-row">
+                <td><strong>TOTAL</strong></td>
+                <td><strong>61.34</strong></td>
+                <td><strong>42.94</strong></td>
+                <td><strong>18.40</strong></td>
+                <td></td>
+            </tr>
+        </table>
+        
+        <div class="action-box">
+            <p class="action-text">✓ IMMEDIATE ACTION: Email L&T Financial Rs 1,801,800 OTS Offer (Ref: BL240910207908339)</p>
+        </div>
+        
+        <div class="footer">
+            <p>RBI OTS Framework: 70% settlement per DBOD.No.Leg.BC.252/09.07.005/2013-14<br>
+            Total Savings Potential: Rs 1,840,200 (30% of total exposure)</p>
+            <p class="no-print" style="margin-top:15px; color:#1976d2; font-weight:bold;">
+                → PRINT INSTRUCTIONS: Press Ctrl+P → Choose "Save as PDF" or your printer
+            </p>
+        </div>
+    </div>
+</body>
+</html>
