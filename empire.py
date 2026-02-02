@@ -82,18 +82,23 @@ class DebtEmpireAnalyzer:
             loans = data.get("loans") or []
             if not loans:
                 return False
-            # Convert to empire format (provider, outstanding, emi, start_date, account_ref)
+            # Convert to empire format (provider, outstanding, emi, start_date, account_ref, ots fields)
             self.loans = []
             for L in loans:
                 os_amt = L.get("outstanding") or L.get("outstanding_principal", 0)
                 emi = L.get("emi") or (os_amt // 24) or 1  # fallback
-                self.loans.append({
+                loan = {
                     "provider": L.get("provider", "Unknown"),
                     "outstanding": int(os_amt),
                     "emi": int(emi),
                     "start_date": L.get("start_date", "2024-01-01"),
                     "account_ref": L.get("account_ref", "")
-                })
+                }
+                if L.get("ots_amount_70pct") is not None:
+                    loan["ots_amount_70pct"] = int(L["ots_amount_70pct"])
+                if L.get("ots_percent") is not None:
+                    loan["ots_percent"] = int(L["ots_percent"])
+                self.loans.append(loan)
             print(f"[OK] Loaded {len(self.loans)} loans from masters.json (your edits preserved)")
             return True
         except Exception as e:
@@ -262,8 +267,13 @@ class DebtEmpireAnalyzer:
     
     def generate_dashboard(self):
         """Always generates printable HTML dashboard from current self.loans (masters.json)."""
+        def ots_amt(loan):
+            if loan.get("ots_amount_70pct") is not None:
+                return loan["ots_amount_70pct"]
+            pct = loan.get("ots_percent", 70)
+            return round(loan["outstanding"] * (pct / 100))
         total_os = sum(l["outstanding"] for l in self.loans)
-        total_ots = sum(round(l["outstanding"] * 0.70) for l in self.loans)
+        total_ots = sum(ots_amt(l) for l in self.loans)
         total_savings = total_os - total_ots
         # Provider display names
         def provider_name(p):
@@ -276,19 +286,34 @@ class DebtEmpireAnalyzer:
             return p.title()
         rows = []
         for l in self.loans:
+            ots = ots_amt(l)
             os_l = l["outstanding"] / 100000
-            ots_l = round(l["outstanding"] * 0.70) / 100000
-            sav_l = (l["outstanding"] - round(l["outstanding"] * 0.70)) / 100000
+            ots_l = ots / 100000
+            sav_l = (l["outstanding"] - ots) / 100000
             ref = (l.get("account_ref") or "").strip() or "—"
             rows.append(f'            <tr><td>{provider_name(l["provider"])}</td><td>{os_l:.2f}</td><td>{ots_l:.2f}</td><td>{sav_l:.2f}</td><td class="badge">{ref}</td></tr>')
         table_rows = "\n".join(rows)
         total_os_l = total_os / 100000
         total_ots_l = total_ots / 100000
         total_sav_l = total_savings / 100000
+        savings_pct = round(100 * total_savings / total_os) if total_os > 0 else 0
+        # Build CSV rows for export
+        csv_rows = []
+        for l in self.loans:
+            ots = ots_amt(l)
+            sav = l["outstanding"] - ots
+            csv_rows.append({
+                "provider": provider_name(l["provider"]),
+                "os": l["outstanding"],
+                "ots": ots,
+                "savings": sav,
+                "account_ref": (l.get("account_ref") or "").strip() or "—"
+            })
+        csv_json = json.dumps(csv_rows)
         # First loan with BL ref for L&T action, else first loan
         action_loan = next((l for l in self.loans if "BL" in str(l.get("account_ref") or "")), self.loans[0] if self.loans else None)
         if action_loan:
-            action_amt = f"{round(action_loan['outstanding'] * 0.70):,}"
+            action_amt = f"{ots_amt(action_loan):,}"
             action_ref = (action_loan.get("account_ref") or "").strip() or "—"
             action_text = f"✓ IMMEDIATE ACTION: Email {provider_name(action_loan['provider'])} Rs {action_amt} OTS Offer (Ref: {action_ref})"
         else:
@@ -332,7 +357,7 @@ class DebtEmpireAnalyzer:
             <tr>
                 <th>Loan Provider</th>
                 <th>OS (Rs L)</th>
-                <th>OTS 70% (Rs L)</th>
+                <th>OTS (Rs L)</th>
                 <th>Savings (Rs L)</th>
                 <th>Account Ref</th>
             </tr>
@@ -351,13 +376,44 @@ class DebtEmpireAnalyzer:
         </div>
         
         <div class="footer">
-            <p>RBI OTS Framework: 70% settlement per DBOD.No.Leg.BC.252/09.07.005/2013-14<br>
-            Total Savings Potential: Rs {total_savings:,} (30% of total exposure)</p>
-            <p class="no-print" style="margin-top:15px; color:#1976d2; font-weight:bold;">
-                → PRINT INSTRUCTIONS: Press Ctrl+P → Choose "Save as PDF" or your printer
+            <p>RBI OTS Framework per DBOD.No.Leg.BC.252/09.07.005/2013-14<br>
+            Total Savings: Rs {total_savings:,} ({savings_pct}% of exposure)</p>
+            <p class="no-print" style="margin-top:15px;">
+                <button onclick="exportRbiCsv()" style="padding:8px 16px;background:#28a745;color:white;border:none;border-radius:6px;cursor:pointer;font-weight:600;margin-right:8px;">Save as CSV</button>
+                <button onclick="saveRbiPdf()" style="padding:8px 16px;background:#dc3545;color:white;border:none;border-radius:6px;cursor:pointer;font-weight:600;">Save as PDF</button>
+            </p>
+            <p class="no-print" style="margin-top:10px; color:#1976d2; font-weight:bold;">
+                Or: Press Ctrl+P → Choose "Save as PDF" or your printer
+            </p>
+            <p class="no-print" style="margin-top:12px; padding:12px; background:#e8f5e9; border-radius:6px;">
+                <strong>Edit / Add loans:</strong> <a href="editable_master_dashboard.html" target="_blank">Editable Master Dashboard</a> (primary) |
+                <a href="senior_arbitrage_manager.html" target="_blank">Senior Arbitrage Manager</a> (add docs)<br>
+                <span style="font-size:11px; color:#555;">Export from Senior Arbitrage Manager → Import in Editable Dashboard → Save → <code>python refresh_dashboard.py</code></span>
             </p>
         </div>
     </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script>
+    var rbiCsvData = {csv_json};
+    function exportRbiCsv() {{
+        var headers = "Provider,OS_Rs,OTS_Rs,Savings_Rs,Account_Ref";
+        var rows = rbiCsvData.map(function(r) {{
+            return '"' + (r.provider||'').replace(/"/g,'""') + '",' + r.os + ',' + r.ots + ',' + r.savings + ',"' + (r.account_ref||'').replace(/"/g,'""') + '"';
+        }});
+        var csv = headers + "\\n" + rows.join("\\n");
+        var blob = new Blob([csv], {{ type: "text/csv;charset=utf-8" }});
+        var a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "rbi-ots-dashboard.csv";
+        a.click();
+        URL.revokeObjectURL(a.href);
+    }}
+    function saveRbiPdf() {{
+        if (typeof html2pdf === "undefined") {{ alert("PDF library loading... Try again in a moment."); return; }}
+        var el = document.querySelector(".container");
+        html2pdf().set({{ margin: 10, filename: "rbi-ots-dashboard.pdf", image: {{ type: "jpeg", quality: 0.98 }}, html2canvas: {{ scale: 2 }}, jsPDF: {{ unit: "mm", format: "a4", orientation: "portrait" }} }}).from(el).save();
+    }}
+    </script>
 </body>
 </html>"""
         

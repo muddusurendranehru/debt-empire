@@ -1,10 +1,26 @@
 DEBT EMPIRE v3.2 — STEPS TO OPEN (HTML ONLY — NO POWERSHELL)
 =============================================================
 
-RECOMMENDED (BEST)
-------------------
+RECOMMENDED (BEST) — Version 1.5 / v3.1 (lighter than v3.2)
+------------------------------------------------------------
+  http://localhost:8080/verifier_with_upload_v3.1.html
+  → Preferred by many: simpler, same EXTRACTOR → VERIFIER → MANAGER. Same data (localStorage.debtEmpireLoans).
+
+ALTERNATIVE — Full-featured v3.2
+--------------------------------
   http://localhost:8080/verifier_with_upload_v3.2.html
-  → Use this as your main dashboard. Same data (localStorage.debtEmpireLoans).
+  → Extra: per-loan print, duplicate handling, Save As link. Same flow.
+
+EDITABLE MASTER DASHBOARD — Human in the Loop (double-click OR server)
+----------------------------------------------------------------------
+  OPTION 1 — Double-click (no server): File Explorer → debt-empire folder → double-click editable_master_dashboard.html
+  OPTION 2 — With server: http://localhost:8080/editable_master_dashboard.html
+
+  → Import accepts CSV (from Senior Arbitrage Manager Export Loans as CSV) or JSON (masters_debt_empire.json)
+  → Edit loans inline (Provider, Outstanding, EMI, Pay %, Account Ref). Add or remove rows.
+  → Save: JSON (masters.json) | CSV (Google Sheets) | PDF (final records)
+
+  WORKFLOW: Senior Arbitrage Manager → Export CSV (or JSON) → Editable Dashboard → Import → Review → Save
 
 
 HOW TO USE THIS WEB APP — AFTER CLOSING AND OPENING YOUR PC
@@ -15,7 +31,7 @@ HOW TO USE THIS WEB APP — AFTER CLOSING AND OPENING YOUR PC
     1. Open your PC and open Chrome or Edge (same browser you used before).
     2. Open File Explorer.
     3. In the address bar paste: c:\Users\MYPC\Desktop\debt-arbitrage\debt-empire
-    4. Double-click: verifier_with_upload_v3.2.html  (or senior_arbitrage_manager.html)
+    4. Double-click: verifier_with_upload_v3.1.html  (v1.5, preferred) or verifier_with_upload_v3.2.html or senior_arbitrage_manager.html
     5. The app opens. Your loans are still there (same browser = same data).
     → To open the app next time: repeat steps 2–4. No server needed.
 
@@ -24,8 +40,10 @@ HOW TO USE THIS WEB APP — AFTER CLOSING AND OPENING YOUR PC
     2. Open PowerShell.
     3. Run: cd c:\Users\MYPC\Desktop\debt-arbitrage\debt-empire
     4. Run: python -m http.server 8080
-    5. In the browser ADDRESS BAR (not Google search) type: http://localhost:8080/verifier_with_upload_v3.2.html
-       Or for Senior Manager: http://localhost:8080/senior_arbitrage_manager.html
+    5. In the browser ADDRESS BAR (not Google search) type: http://localhost:8080/verifier_with_upload_v3.1.html  (v1.5 / preferred)
+       Or v3.2: http://localhost:8080/verifier_with_upload_v3.2.html
+       Or Senior Manager: http://localhost:8080/senior_arbitrage_manager.html
+       Or Editable Master Dashboard: http://localhost:8080/editable_master_dashboard.html
     6. Press Enter. The app opens. Your loans are still there.
     → To open the app next time: repeat steps 2–6. Start the server first (steps 2–4).
 
@@ -40,15 +58,17 @@ Option A (double-click):
   1. Open File Explorer.
   2. Go to folder: Desktop\debt-arbitrage\debt-empire
   3. Double-click one of:
-       verifier_with_upload_v3.2.html   ← RECOMMENDED (best)
+       verifier_with_upload_v3.1.html   ← RECOMMENDED (v1.5, lighter than v3.2)
+       verifier_with_upload_v3.2.html   ← Full-featured
        senior_arbitrage_manager.html
+       editable_master_dashboard.html   ← Debt Empire Editable Master (Import CSV/JSON, edit Pay %, Save JSON/CSV/PDF)
   → Opens in your default browser (Chrome/Edge). No PowerShell.
 
 Option B (from browser):
   1. Open Chrome or Edge.
   2. Press Ctrl+O (File → Open file).
   3. Go to: Desktop\debt-arbitrage\debt-empire
-  4. Select verifier_with_upload_v3.2.html or senior_arbitrage_manager.html → Open.
+  4. Select verifier_with_upload_v3.1.html (v1.5) or verifier_with_upload_v3.2.html or senior_arbitrage_manager.html → Open.
 
 Option C (drag into browser):
   1. Open Chrome or Edge.
@@ -87,7 +107,9 @@ OPTIONAL — IF YOU WANT TO RUN A SERVER
 --------------------------------------
   1. Open PowerShell → cd c:\Users\MYPC\Desktop\debt-arbitrage\debt-empire
   2. Run: python -m http.server 8080
-  3. In browser go to: http://localhost:8080/verifier_with_upload_v3.2.html  ← BEST
+  3. In browser go to: http://localhost:8080/verifier_with_upload_v3.1.html  ← BEST (v1.5)
+  Or: http://localhost:8080/verifier_with_upload_v3.2.html (full-featured)
+  Or: http://localhost:8080/editable_master_dashboard.html (edit loans inline, Save → masters.json)
   (Use this only if you need http:// for PDF.js or other restrictions.)
 
 

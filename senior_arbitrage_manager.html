@@ -442,6 +442,12 @@
                         <p>Download all loans as CSV for Google Sheets/Excel backup. Lender details stay PRIVATE.</p>
                         <button id="exportCsvBtn" class="btn btn-primary">⬇️ Export Loans as CSV</button>
                     </div>
+                    <div class="card no-print" style="margin-top:15px; background:#e8f5e9; border-left:4px solid #2e7d32; padding:15px;">
+                        <h3>📊 Export for Debt Empire Master Board</h3>
+                        <p>Export loans to Debt Empire dashboard (TOTAL EXPOSURE, OTS, SAVINGS). Human in the loop - you review and edit.</p>
+                        <button id="syncMasterBoardBtn" class="btn btn-success">📊 Export for Debt Empire</button>
+                        <p style="font-size:12px; color:#555; margin-top:10px;">1. Click to download <code>masters_debt_empire.json</code><br>2. Open <a href="editable_master_dashboard.html" target="_blank">Editable Master Dashboard</a><br>3. Click <strong>Import</strong> and select the file<br>4. Review, edit, then Save</p>
+                    </div>
                 </div>
             </div>
             <div class="sidebar">
@@ -1326,6 +1332,60 @@
             }
 
             document.getElementById('exportCsvBtn')?.addEventListener('click', exportLoansAsCsv);
+
+            function syncToMasterBoard() {
+                const active = loans.filter(l => (l.status || 'running') !== 'closed' && (Number(l.outstanding) || 0) > 0);
+                if (active.length === 0) {
+                    alert('No active loans with OS > 0. Add loans first or adjust status.');
+                    return;
+                }
+                function providerFromLoan(loan) {
+                    const ln = (loan.lenderName || loan.lender || '').toUpperCase();
+                    const acc = (loan.account || '').toUpperCase();
+                    if (/L&T|LT|LANDT/.test(ln) || /^BL/.test(acc)) return 'L&T';
+                    if (/HDFC/.test(ln) || /HDFC/.test(acc)) return 'HDFC';
+                    if (/TATA/.test(ln) || /TATA|0086/.test(acc)) return 'Tata';
+                    if (/BAJAJ/.test(ln) || /400|H400|BAJAJ/.test(acc)) return 'Bajaj';
+                    return (loan.lenderName || loan.lender || 'Unknown').trim() || 'Unknown';
+                }
+                const masterLoans = active.map(l => {
+                    const os = Number(l.os || l.outstanding) || 0;
+                    const emi = Number(l.emi) || 0;
+                    const otsPct = l.otsPercent !== undefined ? l.otsPercent : 70;
+                    const otsAmt = Math.round(os * (otsPct / 100));
+                    return {
+                        provider: providerFromLoan(l),
+                        outstanding: os,
+                        emi: emi,
+                        tenure_months: emi > 0 ? Math.ceil(os / emi) : 24,
+                        ots_percent: otsPct,
+                        ots_amount_70pct: otsAmt,
+                        savings: os - otsAmt,
+                        start_date: l.disbursalDate || l.startDate || '2024-01-01',
+                        account_ref: (l.account || '').trim() || (l.name || '').slice(0, 20)
+                    };
+                });
+                const totalExp = masterLoans.reduce((s, l) => s + l.outstanding, 0);
+                const totalOts = masterLoans.reduce((s, l) => s + l.ots_amount_70pct, 0);
+                const payload = {
+                    loans: masterLoans,
+                    total_exposure: totalExp,
+                    total_ots_liability: totalOts,
+                    total_savings: totalExp - totalOts,
+                    rbi_ots_rule: '70% per DBOD.No.Leg.BC.252/09.07.005/2013-14',
+                    generated_at: new Date().toISOString()
+                };
+                const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'masters_debt_empire.json';
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 0);
+                alert('Downloaded masters_debt_empire.json. Open Editable Master Dashboard → Import → select this file → review → Save');
+            }
+            document.getElementById('syncMasterBoardBtn')?.addEventListener('click', syncToMasterBoard);
 
             console.log('✅ Debt Empire v3.2 Senior Arbitrage Manager loaded');
             console.log(`📊 ${loans.length} loans in storage`);

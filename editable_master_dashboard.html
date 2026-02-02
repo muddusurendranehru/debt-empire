@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debt Empire - Editable Master Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 { font-size: 28px; margin-bottom: 8px; }
+        .header .subtitle { font-size: 14px; opacity: 0.9; }
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .stat-card .label { font-size: 11px; color: #666; text-transform: uppercase; margin-bottom: 5px; }
+        .stat-card .value { font-size: 22px; font-weight: bold; color: #1e3c72; }
+        .actions-bar {
+            padding: 15px 25px;
+            background: #fff;
+            border-bottom: 2px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-outline { background: white; border: 2px solid #667eea; color: #667eea; }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-small { padding: 6px 12px; font-size: 12px; }
+        .table-container { padding: 25px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        thead { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; }
+        th { padding: 12px; text-align: left; font-size: 13px; }
+        td { padding: 10px; border-bottom: 1px solid #e0e0e0; }
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        input:focus { outline: none; border-color: #667eea; }
+        .total-row { font-weight: bold; background: #f8f9fa !important; }
+        .instructions {
+            padding: 20px 25px;
+            background: #e8f5e9;
+            border-left: 4px solid #28a745;
+            margin: 20px 25px;
+            border-radius: 0 8px 8px 0;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .instructions code { background: #fff; padding: 2px 6px; border-radius: 4px; }
+        #loadErr { color: #dc3545; padding: 20px; text-align: center; }
+        @media print { .no-print { display: none !important; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Debt Empire - Editable Master Dashboard</h1>
+            <div class="subtitle">Import CSV or JSON, edit inline, Save as CSV for Google Sheets</div>
+        </div>
+
+        <div id="loadErr" style="display:none;"></div>
+
+        <div id="content" style="display:none;">
+            <div class="stats-bar">
+                <div class="stat-card">
+                    <div class="label">Total Exposure</div>
+                    <div class="value" id="statExposure">Rs 0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">OTS Liability (Pay)</div>
+                    <div class="value" id="statOts">Rs 0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Total Savings</div>
+                    <div class="value" id="statSavings">Rs 0</div>
+                </div>
+            </div>
+
+            <div class="actions-bar no-print">
+                <button class="btn btn-success" onclick="saveAndDownload()">Save (masters.json)</button>
+                <button class="btn btn-success" onclick="saveAsCSV()">Save as CSV</button>
+                <button class="btn btn-success" onclick="saveAsPDF()">Save as PDF</button>
+                <button class="btn btn-primary" onclick="window.print()">Print / PDF</button>
+                <button class="btn btn-primary" onclick="addRow()">Add loan row</button>
+                <button class="btn btn-primary" onclick="document.getElementById('importFile').click()">Import (CSV or JSON)</button>
+                <input type="file" id="importFile" accept=".json,.csv" style="display:none;" onchange="importFromFile(this)">
+                <a href="senior_arbitrage_manager.html" class="btn btn-outline" target="_blank">Senior Arbitrage Manager</a>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Provider</th>
+                            <th>Outstanding (Rs)</th>
+                            <th>EMI (Rs)</th>
+                            <th>Pay %</th>
+                            <th>OTS (Rs)</th>
+                            <th>Savings (Rs)</th>
+                            <th>Account Ref</th>
+                            <th>Start Date</th>
+                            <th class="no-print"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="loansBody"></tbody>
+                </table>
+            </div>
+
+            <div class="instructions no-print">
+                <strong>Workflow:</strong><br>
+                1. <strong>Import:</strong> Click "Import (CSV or JSON)" → select CSV from Senior Arbitrage Manager export, or masters_debt_empire.json<br>
+                2. <strong>Review:</strong> Edit any values (Provider, Outstanding, EMI, <strong>Pay %</strong>, Account Ref). Pay % = % of outstanding to pay (e.g. 20 = pay 20%, save 80%). Add/remove rows as needed.<br>
+                3. <strong>Save formats:</strong> JSON (masters.json for refresh_dashboard) | CSV (for Google Sheets) | PDF (final records/printing)
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let loans = [];
+
+        function formatLakhs(n) {
+            if (!n || isNaN(n)) return 'Rs 0';
+            const L = n / 100000;
+            return L >= 1 ? 'Rs ' + L.toFixed(2) + 'L' : 'Rs ' + n.toLocaleString();
+        }
+
+        function formatNum(n) {
+            return (n || 0).toLocaleString();
+        }
+
+        function recalcStats() {
+            let totalOs = 0, totalOts = 0;
+            document.querySelectorAll('#loansBody tr').forEach(tr => {
+                const os = parseFloat(tr.querySelector('.loan-os')?.value) || 0;
+                const pct = parseFloat(tr.querySelector('.loan-ots-pct')?.value) || 70;
+                totalOs += os;
+                totalOts += Math.round(os * (Math.max(1, Math.min(100, pct)) / 100));
+            });
+            const totalSav = totalOs - totalOts;
+            document.getElementById('statExposure').textContent = formatLakhs(totalOs);
+            document.getElementById('statOts').textContent = formatLakhs(totalOts);
+            document.getElementById('statSavings').textContent = formatLakhs(totalSav);
+        }
+
+        function renderRow(loan, idx) {
+            const os = loan.outstanding || 0;
+            const emi = loan.emi || 0;
+            let otsPct = loan.ots_percent !== undefined ? loan.ots_percent : (loan.otsPercent !== undefined ? loan.otsPercent : null);
+            if (otsPct == null && loan.ots_amount_70pct != null && os > 0) {
+                otsPct = Math.round(loan.ots_amount_70pct / os * 100);
+            }
+            if (otsPct == null) otsPct = 70;
+            const pct = Math.max(1, Math.min(100, otsPct));
+            const otsAmt = Math.round(os * (pct / 100));
+            const sav = os - otsAmt;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><input type="text" class="loan-provider" value="${(loan.provider || '').replace(/"/g, '&quot;')}" placeholder="L&T, HDFC, Tata, Bajaj"></td>
+                <td><input type="number" class="loan-os" value="${os}" min="0" onchange="recalcRow(this)"></td>
+                <td><input type="number" class="loan-emi" value="${emi}" min="0" onchange="recalcRow(this)"></td>
+                <td><input type="number" class="loan-ots-pct" value="${pct}" min="1" max="100" onchange="recalcRow(this)"></td>
+                <td><span class="loan-ots-display">${formatNum(otsAmt)}</span></td>
+                <td><span class="loan-sav-display">${formatNum(sav)}</span></td>
+                <td><input type="text" class="loan-account" value="${(loan.account_ref || '').replace(/"/g, '&quot;')}" placeholder="BL240910207908339"></td>
+                <td><input type="text" class="loan-date" value="${(loan.start_date || '').replace(/"/g, '&quot;')}" placeholder="2024-04-03"></td>
+                <td class="no-print"><button class="btn btn-danger btn-small" onclick="removeRow(this)" type="button">Remove</button></td>
+            `;
+            return tr;
+        }
+
+        function recalcRow(input) {
+            const tr = input.closest('tr');
+            const os = parseFloat(tr.querySelector('.loan-os')?.value) || 0;
+            const pct = parseFloat(tr.querySelector('.loan-ots-pct')?.value) || 70;
+            const pctClamped = Math.max(1, Math.min(100, pct));
+            const otsAmt = Math.round(os * (pctClamped / 100));
+            const sav = os - otsAmt;
+            tr.querySelector('.loan-ots-display').textContent = formatNum(otsAmt);
+            tr.querySelector('.loan-sav-display').textContent = formatNum(sav);
+            recalcStats();
+        }
+
+        function addRow() {
+            const tbody = document.getElementById('loansBody');
+            const tr = renderRow({ provider: '', outstanding: 0, emi: 0, ots_percent: 70, account_ref: '', start_date: '' }, loans.length);
+            tbody.appendChild(tr);
+            recalcStats();
+        }
+
+        function removeRow(btn) {
+            btn.closest('tr').remove();
+            recalcStats();
+        }
+
+        function parseCSVLine(line) {
+            const result = [];
+            let i = 0;
+            while (i < line.length) {
+                const c = line[i];
+                if (c === '"') {
+                    i++;
+                    let val = '';
+                    while (i < line.length) {
+                        if (line[i] === '"' && line[i + 1] === '"') { val += '"'; i += 2; continue; }
+                        if (line[i] === '"') { i++; break; }
+                        val += line[i++];
+                    }
+                    result.push(val.trim());
+                    if (line[i] === ',') i++;
+                } else {
+                    let val = '';
+                    while (i < line.length && line[i] !== ',') val += line[i++];
+                    result.push(val.trim());
+                    if (line[i] === ',') i++;
+                }
+            }
+            return result;
+        }
+
+        function parseCSVToLoans(text) {
+            const lines = text.split(/\r?\n/).filter(l => l.trim());
+            if (lines.length < 2) return [];
+            const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().replace(/"/g, ''));
+            const loans = [];
+            for (let i = 1; i < lines.length; i++) {
+                const vals = parseCSVLine(lines[i]);
+                const row = {};
+                headers.forEach((h, j) => { row[h] = vals[j] || ''; });
+                const provider = (row.lendername || row.loanname || row.provider || '').trim() || 'Unknown';
+                const outstanding = parseFloat(row.outstanding || row.os || 0) || 0;
+                const emi = parseFloat(row.emi || 0) || 0;
+                const otsPct = parseFloat(row.otspercent || row.ots_percent || row.otspct || 70) || 70;
+                const accountRef = (row.accountnumber || row.account_ref || row.account || '').trim();
+                const startDate = (row.start_date || row.startdate || '').trim() || '2024-01-01';
+                if (!provider && !accountRef && outstanding === 0) continue;
+                loans.push({
+                    provider: provider,
+                    outstanding: outstanding,
+                    emi: emi,
+                    ots_percent: Math.max(1, Math.min(100, otsPct)),
+                    account_ref: accountRef || '—',
+                    start_date: startDate
+                });
+            }
+            return loans;
+        }
+
+        function importFromFile(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const text = e.target.result;
+                    const isCSV = /\.csv$/i.test(file.name);
+                    let loansToAdd = [];
+                    if (isCSV) {
+                        loansToAdd = parseCSVToLoans(text);
+                        if (loansToAdd.length === 0) {
+                            alert('No valid loan rows found in CSV. Expected columns: lenderName, outstanding, emi, accountNumber');
+                            input.value = '';
+                            return;
+                        }
+                    } else {
+                        const data = JSON.parse(text);
+                        if (!data.loans || !Array.isArray(data.loans)) {
+                            alert('Invalid JSON: no "loans" array found.');
+                            input.value = '';
+                            return;
+                        }
+                        loansToAdd = data.loans.map(l => ({
+                            provider: l.provider || 'Unknown',
+                            outstanding: l.outstanding || 0,
+                            emi: l.emi || 0,
+                            ots_percent: l.ots_percent !== undefined ? l.ots_percent : (l.otsPercent !== undefined ? l.otsPercent : 70),
+                            account_ref: l.account_ref || '—',
+                            start_date: l.start_date || '2024-01-01'
+                        }));
+                    }
+                    const existingAccounts = new Set();
+                    document.querySelectorAll('.loan-account').forEach(inp => {
+                        const acc = (inp.value || '').trim().toUpperCase();
+                        if (acc) existingAccounts.add(acc);
+                    });
+                    const tbody = document.getElementById('loansBody');
+                    let added = 0, skipped = 0;
+                    loansToAdd.forEach(loan => {
+                        const acc = (loan.account_ref || '').trim().toUpperCase();
+                        if (acc && acc !== '—' && existingAccounts.has(acc)) {
+                            skipped++;
+                            return;
+                        }
+                        if (acc && acc !== '—') existingAccounts.add(acc);
+                        const tr = renderRow(loan, tbody.children.length);
+                        tbody.appendChild(tr);
+                        added++;
+                    });
+                    recalcStats();
+                    alert('Import complete: ' + added + ' loan(s) added' + (skipped > 0 ? ', ' + skipped + ' skipped (duplicate account)' : '') + '. Review and Save when ready.');
+                } catch (err) {
+                    alert('Error reading file: ' + err.message);
+                }
+                input.value = '';
+            };
+            reader.readAsText(file);
+        }
+
+        function collectLoans() {
+            const rows = document.querySelectorAll('#loansBody tr');
+            const out = [];
+            rows.forEach(tr => {
+                const provider = (tr.querySelector('.loan-provider')?.value || '').trim();
+                const os = parseFloat(tr.querySelector('.loan-os')?.value) || 0;
+                const emi = parseFloat(tr.querySelector('.loan-emi')?.value) || 0;
+                const otsPct = parseFloat(tr.querySelector('.loan-ots-pct')?.value) || 70;
+                const account = (tr.querySelector('.loan-account')?.value || '').trim();
+                const startDate = (tr.querySelector('.loan-date')?.value || '').trim() || '2024-01-01';
+                if (!provider && !account && os === 0) return;
+                const pct = Math.max(1, Math.min(100, otsPct));
+                const otsAmt = Math.round(os * (pct / 100));
+                out.push({
+                    provider: provider || 'Unknown',
+                    outstanding: os,
+                    emi: emi,
+                    tenure_months: emi > 0 ? Math.ceil(os / emi) : 24,
+                    ots_percent: pct,
+                    ots_amount_70pct: otsAmt,
+                    savings: os - otsAmt,
+                    start_date: startDate,
+                    account_ref: account || '—'
+                });
+            });
+            return out;
+        }
+
+        function saveAndDownload() {
+            const collected = collectLoans();
+            const totalOs = collected.reduce((s, l) => s + l.outstanding, 0);
+            const totalOts = collected.reduce((s, l) => s + l.ots_amount_70pct, 0);
+            const payload = {
+                loans: collected,
+                total_exposure: totalOs,
+                total_ots_liability: totalOts,
+                total_savings: totalOs - totalOts,
+                rbi_ots_rule: '70% per DBOD.No.Leg.BC.252/09.07.005/2013-14',
+                generated_at: new Date().toISOString()
+            };
+            const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'masters.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            alert('Downloaded masters.json. Replace debt-empire/masters.json, then run: python refresh_dashboard.py');
+        }
+
+        function saveAsCSV() {
+            const collected = collectLoans();
+            if (collected.length === 0) {
+                alert('No loans to export. Add loans first.');
+                return;
+            }
+            const headers = ['Provider', 'Outstanding', 'EMI', 'OTS_Pct', 'OTS_Amount', 'Savings', 'Account_Ref', 'Start_Date'];
+            const rows = collected.map(l => [
+                '"' + (l.provider || '').replace(/"/g, '""') + '"',
+                l.outstanding,
+                l.emi,
+                l.ots_percent || 70,
+                l.ots_amount_70pct,
+                l.savings,
+                '"' + (l.account_ref || '').replace(/"/g, '""') + '"',
+                '"' + (l.start_date || '').replace(/"/g, '""') + '"'
+            ].join(','));
+            const csvContent = [headers.join(','), ...rows].join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'loans_export.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            alert('Downloaded loans_export.csv. Import to Google Sheets or Excel.');
+        }
+
+        function saveAsPDF() {
+            if (typeof html2pdf === 'undefined') {
+                alert('PDF library loading... Please try again in a moment.');
+                return;
+            }
+            const element = document.querySelector('.container');
+            const opt = {
+                margin: 10,
+                filename: 'debt-empire-master-dashboard.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            html2pdf().set(opt).from(element).save();
+        }
+
+        function init() {
+            fetch('masters.json')
+                .then(r => {
+                    if (!r.ok) throw new Error('masters.json not found');
+                    return r.json();
+                })
+                .then(data => {
+                    loans = data.loans || [];
+                    const tbody = document.getElementById('loansBody');
+                    tbody.innerHTML = '';
+                    loans.forEach((l, i) => tbody.appendChild(renderRow(l, i)));
+                    if (loans.length === 0) addRow();
+                    recalcStats();
+                    document.getElementById('content').style.display = 'block';
+                })
+                .catch(() => {
+                    loans = [];
+                    const tbody = document.getElementById('loansBody');
+                    tbody.innerHTML = '';
+                    addRow();
+                    recalcStats();
+                    document.getElementById('content').style.display = 'block';
+                });
+        }
+
+        init();
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</body>
+</html>

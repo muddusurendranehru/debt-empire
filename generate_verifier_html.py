@@ -43,6 +43,14 @@ def display_shortcode(loan):
     prefix = p[:3] if len(p) >= 3 else p or 'xxx'
     return f"{prefix}{os_lakhs}L"
 
+def ots_amount(loan):
+    """OTS amount to pay - uses stored value or computes from ots_percent (default 70%)."""
+    os_amt = loan.get('outstanding_principal', loan.get('outstanding', 0))
+    if loan.get('ots_amount_70pct') is not None:
+        return loan['ots_amount_70pct']
+    pct = loan.get('ots_percent', 70)
+    return round(os_amt * (pct / 100))
+
 def split_running_closed(loans):
     """Split into running (OS > 0) and closed (OS == 0 or status CLOSED)."""
     running = []
@@ -157,7 +165,7 @@ def generate_html(masters_data):
     
     # Calculate totals
     total_exposure = sum(l.get('outstanding_principal', l.get('outstanding', 0)) for l in loans)
-    total_ots = sum(round(l.get('outstanding_principal', l.get('outstanding', 0)) * 0.70) for l in loans)
+    total_ots = sum(ots_amount(l) for l in loans)
     total_savings = total_exposure - total_ots
     total_emi = sum(l.get('emi_amount', l.get('emi', 0)) for l in loans)
     
@@ -609,7 +617,7 @@ def generate_html(masters_data):
                 <div class="value">Rs {total_exposure/100000:.2f}L</div>
             </div>
             <div class="stat-card">
-                <div class="label">OTS Liability (70%)</div>
+                <div class="label">OTS Liability</div>
                 <div class="value">Rs {total_ots/100000:.2f}L</div>
             </div>
             <div class="stat-card">

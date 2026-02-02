@@ -1,0 +1,57 @@
+================================================================================
+DEBT EMPIRE — Double-Click to Open + GitHub Push
+================================================================================
+
+DOUBLE-CLICK EDITABLE MASTER DASHBOARD (no server needed)
+---------------------------------------------------------
+1. Open File Explorer.
+2. In the address bar paste: c:\Users\MYPC\Desktop\debt-arbitrage\debt-empire
+3. Double-click: editable_master_dashboard.html
+   → Opens in Chrome/Edge. Same folder as senior_arbitrage_manager.html.
+
+4. If you see an empty table: Click "Import (CSV or JSON)" → select your CSV or masters_debt_empire.json
+5. Edit values (Pay %, Outstanding, EMI, etc.) → Save as JSON / CSV / PDF
+
+Note: When opened by double-click, masters.json may not auto-load. Use Import to load your data.
+      Senior Arbitrage Manager and Editable Master Dashboard both work by double-click.
+
+QUICK PATH — Save to Desktop (optional)
+---------------------------------------
+To have a shortcut on Desktop:
+1. Right-click editable_master_dashboard.html
+2. Send to → Desktop (create shortcut)
+   Or: Create shortcut, drag to Desktop
+
+GITHUB PUSH — Steps to Save and Push
+------------------------------------
+If you don't have a GitHub repo yet:
+
+Step 1 — Create repo on GitHub
+  1. Go to https://github.com/new
+  2. Repository name: debt-arbitrage (or your choice)
+  3. Public, no README. Create.
+
+Step 2 — Initialize and push (first time only)
+  Open PowerShell, run:
+
+    cd c:\Users\MYPC\Desktop\debt-arbitrage
+    git init
+    git add .
+    git commit -m "Debt Empire: Editable Master Dashboard, Senior Arbitrage, RBI OTS"
+    git branch -M main
+    git remote add origin https://github.com/YOUR_USERNAME/debt-arbitrage.git
+    git push -u origin main
+
+  Replace YOUR_USERNAME with your GitHub username.
+
+Step 3 — Push updates (after changes)
+    cd c:\Users\MYPC\Desktop\debt-arbitrage
+    git add .
+    git commit -m "Your message here"
+    git push
+
+FILE LOCATIONS
+--------------
+  editable_master_dashboard.html  → c:\Users\MYPC\Desktop\debt-arbitrage\debt-empire\
+  senior_arbitrage_manager.html   → c:\Users\MYPC\Desktop\debt-arbitrage\debt-empire\
+  masters.json                    → same folder (for refresh_dashboard.py)

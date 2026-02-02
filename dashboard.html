@@ -30,14 +30,14 @@
     <div class="container">
         <div class="header">
             <h1>DEBT EMPIRE: RBI OTS SETTLEMENT DASHBOARD</h1>
-            <div class="subtitle">Generated: 30 January 2026 10:08 PM</div>
+            <div class="subtitle">Generated: 02 February 2026 07:31 AM</div>
         </div>
         
         <table>
             <tr>
                 <th>Loan Provider</th>
                 <th>OS (Rs L)</th>
-                <th>OTS 70% (Rs L)</th>
+                <th>OTS (Rs L)</th>
                 <th>Savings (Rs L)</th>
                 <th>Account Ref</th>
             </tr>
@@ -59,12 +59,43 @@
         </div>
         
         <div class="footer">
-            <p>RBI OTS Framework: 70% settlement per DBOD.No.Leg.BC.252/09.07.005/2013-14<br>
-            Total Savings Potential: Rs 1,840,200 (30% of total exposure)</p>
-            <p class="no-print" style="margin-top:15px; color:#1976d2; font-weight:bold;">
-                → PRINT INSTRUCTIONS: Press Ctrl+P → Choose "Save as PDF" or your printer
+            <p>RBI OTS Framework per DBOD.No.Leg.BC.252/09.07.005/2013-14<br>
+            Total Savings: Rs 1,840,200 (30% of exposure)</p>
+            <p class="no-print" style="margin-top:15px;">
+                <button onclick="exportRbiCsv()" style="padding:8px 16px;background:#28a745;color:white;border:none;border-radius:6px;cursor:pointer;font-weight:600;margin-right:8px;">Save as CSV</button>
+                <button onclick="saveRbiPdf()" style="padding:8px 16px;background:#dc3545;color:white;border:none;border-radius:6px;cursor:pointer;font-weight:600;">Save as PDF</button>
+            </p>
+            <p class="no-print" style="margin-top:10px; color:#1976d2; font-weight:bold;">
+                Or: Press Ctrl+P → Choose "Save as PDF" or your printer
+            </p>
+            <p class="no-print" style="margin-top:12px; padding:12px; background:#e8f5e9; border-radius:6px;">
+                <strong>Edit / Add loans:</strong> <a href="editable_master_dashboard.html" target="_blank">Editable Master Dashboard</a> (primary) |
+                <a href="senior_arbitrage_manager.html" target="_blank">Senior Arbitrage Manager</a> (add docs)<br>
+                <span style="font-size:11px; color:#555;">Export from Senior Arbitrage Manager → Import in Editable Dashboard → Save → <code>python refresh_dashboard.py</code></span>
             </p>
         </div>
     </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script>
+    var rbiCsvData = [{"provider": "L&T Financial", "os": 2574000, "ots": 1801800, "savings": 772200, "account_ref": "BL240910207908339"}, {"provider": "HDFC Bank", "os": 2450000, "ots": 1715000, "savings": 735000, "account_ref": "HDFC24LOAN1"}, {"provider": "Tata Capital", "os": 320000, "ots": 224000, "savings": 96000, "account_ref": "TATA24"}, {"provider": "Bajaj Finance", "os": 790000, "ots": 553000, "savings": 237000, "account_ref": "BAJAJ24"}];
+    function exportRbiCsv() {
+        var headers = "Provider,OS_Rs,OTS_Rs,Savings_Rs,Account_Ref";
+        var rows = rbiCsvData.map(function(r) {
+            return '"' + (r.provider||'').replace(/"/g,'""') + '",' + r.os + ',' + r.ots + ',' + r.savings + ',"' + (r.account_ref||'').replace(/"/g,'""') + '"';
+        });
+        var csv = headers + "\n" + rows.join("\n");
+        var blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+        var a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "rbi-ots-dashboard.csv";
+        a.click();
+        URL.revokeObjectURL(a.href);
+    }
+    function saveRbiPdf() {
+        if (typeof html2pdf === "undefined") { alert("PDF library loading... Try again in a moment."); return; }
+        var el = document.querySelector(".container");
+        html2pdf().set({ margin: 10, filename: "rbi-ots-dashboard.pdf", image: { type: "jpeg", quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: "mm", format: "a4", orientation: "portrait" } }).from(el).save();
+    }
+    </script>
 </body>
 </html>
