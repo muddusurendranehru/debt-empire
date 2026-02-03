@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debt Empire — Step 4: Arbitrator & OTS Email (Read-Only)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.5;
+        }
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .header h1 { font-size: 24px; margin-bottom: 8px; }
+        .header .subtitle { font-size: 14px; opacity: 0.9; }
+        .warning-banner {
+            background: #ffebee;
+            border: 2px solid #d32f2f;
+            color: #b71c1c;
+            padding: 12px 20px;
+            font-weight: 600;
+            text-align: center;
+        }
+        .layout {
+            display: flex;
+            min-height: calc(100vh - 180px);
+            gap: 0;
+        }
+        .left-panel {
+            width: 40%;
+            background: white;
+            border-right: 2px solid #e0e0e0;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .right-panel {
+            width: 60%;
+            background: #fafafa;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .right-panel.hidden { display: none; }
+        .section-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin: 20px 0 12px 0;
+            color: #1a237e;
+            border-bottom: 2px solid #3949ab;
+            padding-bottom: 4px;
+        }
+        .loan-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        .loan-table th, .loan-table td {
+            padding: 8px 10px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .loan-table th {
+            background: #e8eaf6;
+            font-weight: 600;
+        }
+        .loan-table tr:hover { background: #f5f5f5; }
+        .btn {
+            padding: 8px 14px;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            background: #3949ab;
+            color: white;
+        }
+        .btn:hover { opacity: 0.9; }
+        .btn-copy {
+            background: #2e7d32;
+            margin-top: 10px;
+        }
+        .btn-generate {
+            background: #1565c0;
+            padding: 12px 20px;
+            font-size: 15px;
+        }
+        .snapshot-row {
+            margin: 8px 0;
+            padding: 8px;
+            background: white;
+            border-radius: 4px;
+            border-left: 4px solid #3949ab;
+        }
+        .snapshot-row strong { display: inline-block; width: 140px; }
+        .note-small {
+            font-size: 11px;
+            color: #666;
+            margin-top: 10px;
+            font-style: italic;
+        }
+        label { display: block; margin: 6px 0 3px 0; font-weight: 500; font-size: 13px; }
+        input[type="text"], input[type="number"], textarea {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        textarea { min-height: 60px; resize: vertical; }
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 6px 0;
+        }
+        .checkbox-row input[type="checkbox"] { width: auto; }
+        .checklist-item {
+            margin: 12px 0;
+            padding: 10px;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+        }
+        .checklist-item .cat-title { font-weight: 600; margin-bottom: 4px; }
+        .checklist-item .cat-desc { font-size: 12px; color: #666; margin-bottom: 8px; }
+        .email-output {
+            width: 100%;
+            min-height: 300px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        .no-loans {
+            text-align: center;
+            padding: 40px 20px;
+            color: #757575;
+        }
+        .copy-success { color: #2e7d32; font-weight: 600; margin-top: 8px; }
+        .draft-disclaimer {
+            background: #fff3e0;
+            border: 1px solid #ff9800;
+            padding: 8px 12px;
+            font-size: 12px;
+            margin-bottom: 12px;
+            border-radius: 4px;
+        }
+        @media (max-width: 900px) {
+            .layout { flex-direction: column; }
+            .left-panel, .right-panel { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Debt Empire — Step 4: Arbitrator & OTS Email (Read-Only)</h1>
+        <div class="subtitle">Organize arguments, document checklist, and draft OTS request emails. No data modification.</div>
+    </div>
+    <div class="warning-banner">
+        READ-ONLY TOOL: This page ONLY reads your loans and helps draft OTS emails. It does NOT modify any data or send emails. Review carefully before copying.
+    </div>
+
+    <div class="layout">
+        <div class="left-panel">
+            <div class="section-title">Loan Selection</div>
+            <div id="loanListContainer"></div>
+        </div>
+        <div class="right-panel hidden" id="caseBuilderPanel">
+            <div class="section-title">Case Builder</div>
+
+            <div class="section-title">A) Loan Snapshot (Read-Only)</div>
+            <div id="loanSnapshot"></div>
+            <p class="note-small">Verify these numbers in Manager tab if needed. This page does NOT change them.</p>
+
+            <div class="section-title">B) 🏥 Hardship & Background (Fill what applies to you)</div>
+            <div class="checkbox-row">
+                <input type="checkbox" id="seniorCitizen">
+                <label for="seniorCitizen" style="display:inline;width:auto;">Senior citizen (60+ years)</label>
+            </div>
+            <label for="age">Age:</label>
+            <input type="number" id="age" placeholder="e.g., 65" min="1" max="120">
+            <label for="healthBorrower">Borrower's serious health conditions (brief description):</label>
+            <textarea id="healthBorrower" placeholder="e.g., Diabetes, hypertension, chronic back pain, recent surgery..."></textarea>
+            <label for="healthSpouse">Spouse's serious health conditions (if applicable):</label>
+            <textarea id="healthSpouse" placeholder="e.g., Cancer treatment, heart condition..."></textarea>
+            <label for="mentalHealth">Mental health challenges (if any):</label>
+            <textarea id="mentalHealth" placeholder="e.g., Depression, anxiety, severe stress due to financial burden..."></textarea>
+            <div class="checkbox-row">
+                <input type="checkbox" id="clinicClosed">
+                <label for="clinicClosed" style="display:inline;width:auto;">Clinic/practice closed</label>
+            </div>
+            <label for="clinicDetails">Closure details (when and why):</label>
+            <textarea id="clinicDetails" placeholder="e.g., Closed since Jan 2023 due to financial constraints and health issues"></textarea>
+            <label for="incomeStatus">Current income situation:</label>
+            <textarea id="incomeStatus" placeholder="e.g., No regular income since clinic closure, only occasional consulting"></textarea>
+            <label for="otherDebts">Other major debts/obligations:</label>
+            <textarea id="otherDebts" placeholder="e.g., HDFC credit card Rs 2L, L&T personal loan Rs 5L..."></textarea>
+            <label for="emiSince">Regular EMI payments since:</label>
+            <input type="text" id="emiSince" placeholder="e.g., April 2020">
+            <label for="emisPaid">Approximate EMIs paid:</label>
+            <input type="number" id="emisPaid" placeholder="e.g., 36" min="0">
+            <label for="sincerePayment">Periods of sincere payment despite hardship:</label>
+            <textarea id="sincerePayment" placeholder="e.g., Paid consistently for 3 years despite increasing health costs"></textarea>
+            <label for="proposedPct">Proposed settlement %:</label>
+            <input type="number" id="proposedPct" placeholder="e.g., 25" min="1" max="100">
+            <label for="waiverReason">Reason for larger waiver (in your own words):</label>
+            <textarea id="waiverReason" placeholder="e.g., Due to age, health issues, and no income, I request compassionate waiver beyond standard 70%"></textarea>
+
+            <div class="section-title">C) 📄 Document Checklist (Mark what you have)</div>
+            <p class="note-small">Use "Add File" in Manager tab to attach these documents to your loan folder.</p>
+            <div id="documentChecklist"></div>
+
+            <div class="section-title">D) Email Generator</div>
+            <p class="draft-disclaimer">This is a DRAFT. Review carefully before sending.</p>
+            <button type="button" class="btn btn-generate" id="btnGenerate">📧 Generate OTS Request Email (Draft)</button>
+            <label for="emailOutput" style="margin-top:15px;">Generated Email:</label>
+            <textarea id="emailOutput" class="email-output" readonly placeholder="Click the button above to generate..."></textarea>
+            <button type="button" class="btn btn-copy" id="btnCopy">📋 Copy Email Text to Clipboard</button>
+            <div id="copySuccess" class="copy-success" style="display:none;">✅ Email text copied! Paste into your email client.</div>
+        </div>
+    </div>
+
+    <script>
+    (function() {
+        'use strict';
+        var selectedLoan = null;
+        var CHECKLIST_CATS = [
+            { id: 'doc1', title: 'Health certificates & medical reports', desc: 'Doctor certificates, hospital records, diagnostic reports for borrower and spouse.' },
+            { id: 'doc2', title: 'Mental health / psychological reports', desc: 'If applicable.' },
+            { id: 'doc3', title: 'Clinic/business closure proof', desc: 'Closure notice, rent termination, license non-renewal, photos, landlord letters, etc.' },
+            { id: 'doc4', title: 'No-income / low-income proofs', desc: 'Bank statements showing no inflow, CA letter, pension details (if any), etc.' },
+            { id: 'doc5', title: 'Other loan and debt statements', desc: 'Statements from other lenders/credit cards showing parallel obligations.' },
+            { id: 'doc6', title: 'Age and ID proof', desc: 'Aadhaar, PAN, passport, senior citizen card if applicable.' },
+            { id: 'doc7', title: 'Past payment statements', desc: 'Account statements showing years of EMI payments and good conduct.' }
+        ];
+
+        function getProvider(loan) {
+            if (loan.lenderName) return String(loan.lenderName).trim();
+            if (loan.lender) return String(loan.lender).trim();
+            if (loan.customFields && typeof loan.customFields.find === 'function') {
+                var f = loan.customFields.find(function(x) {
+                    return x.label && String(x.label).toLowerCase().indexOf('lender') >= 0;
+                });
+                if (f && f.value) return String(f.value).trim();
+            }
+            return 'Unknown';
+        }
+
+        function loadLoans() {
+            var raw = null;
+            try {
+                raw = localStorage.getItem('debtEmpireLoans');
+            } catch (e) { raw = null; }
+            var loans = [];
+            if (raw) {
+                try {
+                    loans = JSON.parse(raw);
+                    if (!Array.isArray(loans)) loans = [];
+                } catch (e) { loans = []; }
+            }
+            return loans;
+        }
+
+        function renderLoanList(loans) {
+            var container = document.getElementById('loanListContainer');
+            if (!container) return;
+            if (loans.length === 0) {
+                container.innerHTML = '<div class="no-loans">No loans found. Complete Steps 1-3 first.</div>';
+                return;
+            }
+            var html = '<table class="loan-table"><thead><tr><th>Provider</th><th>Borrower</th><th>Account</th><th>OS (Rs)</th><th>OTS %</th><th>Action</th></tr></thead><tbody>';
+            loans.forEach(function(loan) {
+                var os = Number(loan.os) || Number(loan.outstanding) || 0;
+                var pct = Number(loan.otsPercent) || 70;
+                var otsAmt = Math.round(os * (pct / 100));
+                var provider = getProvider(loan);
+                var borrower = (loan.borrower || '').trim() || '—';
+                var account = (loan.account || '').trim() || '—';
+                html += '<tr><td>' + escapeHtml(provider) + '</td><td>' + escapeHtml(borrower) + '</td><td>' + escapeHtml(account) + '</td><td>Rs ' + os.toLocaleString() + '</td><td>' + pct + '%</td><td><button type="button" class="btn" data-id="' + escapeHtml(loan.id || '') + '">📝 Prepare OTS Email</button></td></tr>';
+            });
+            html += '</tbody></table>';
+            container.innerHTML = html;
+            container.querySelectorAll('button[data-id]').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var id = btn.getAttribute('data-id');
+                    var loan = loans.find(function(l) { return (l.id || '') === id; });
+                    if (loan) selectLoan(loan, loans);
+                });
+            });
+        }
+
+        function escapeHtml(s) {
+            if (s == null) return '';
+            var t = document.createElement('div');
+            t.textContent = s;
+            return t.innerHTML;
+        }
+
+        function selectLoan(loan, loans) {
+            selectedLoan = loan;
+            var panel = document.getElementById('caseBuilderPanel');
+            if (panel) panel.classList.remove('hidden');
+
+            var os = Number(loan.os) || Number(loan.outstanding) || 0;
+            var pct = Number(loan.otsPercent) || 70;
+            var otsAmt = Math.round(os * (pct / 100));
+            var provider = getProvider(loan);
+
+            var snap = document.getElementById('loanSnapshot');
+            if (snap) {
+                snap.innerHTML =
+                    '<div class="snapshot-row"><strong>Provider:</strong> ' + escapeHtml(provider) + '</div>' +
+                    '<div class="snapshot-row"><strong>Borrower:</strong> ' + escapeHtml(loan.borrower || '—') + '</div>' +
+                    '<div class="snapshot-row"><strong>Account:</strong> ' + escapeHtml(loan.account || '—') + '</div>' +
+                    '<div class="snapshot-row"><strong>Outstanding:</strong> Rs ' + os.toLocaleString() + '</div>' +
+                    '<div class="snapshot-row"><strong>EMI:</strong> Rs ' + (loan.emi || 0).toLocaleString() + '</div>' +
+                    '<div class="snapshot-row"><strong>Proposed OTS %:</strong> ' + pct + '%</div>' +
+                    '<div class="snapshot-row"><strong>OTS Amount:</strong> Rs ' + otsAmt.toLocaleString() + '</div>' +
+                    '<div class="snapshot-row"><strong>Total Savings:</strong> Rs ' + (os - otsAmt).toLocaleString() + '</div>';
+            }
+
+            clearHardshipFields();
+            renderChecklist();
+        }
+
+        function clearHardshipFields() {
+            ['seniorCitizen','age','healthBorrower','healthSpouse','mentalHealth','clinicClosed','clinicDetails','incomeStatus','otherDebts','emiSince','emisPaid','sincerePayment','proposedPct','waiverReason'].forEach(function(id) {
+                var el = document.getElementById(id);
+                if (!el) return;
+                if (el.type === 'checkbox') el.checked = false;
+                else el.value = '';
+            });
+            CHECKLIST_CATS.forEach(function(c) {
+                var cb = document.getElementById('chk_' + c.id);
+                var notes = document.getElementById('notes_' + c.id);
+                if (cb) cb.checked = false;
+                if (notes) notes.value = '';
+            });
+            var out = document.getElementById('emailOutput');
+            if (out) out.value = '';
+        }
+
+        function renderChecklist() {
+            var container = document.getElementById('documentChecklist');
+            if (!container) return;
+            var html = '';
+            CHECKLIST_CATS.forEach(function(c) {
+                html += '<div class="checklist-item">' +
+                    '<div class="checkbox-row"><input type="checkbox" id="chk_' + c.id + '"><label for="chk_' + c.id + '" style="display:inline;width:auto;">' + escapeHtml(c.title) + '</label></div>' +
+                    '<div class="cat-desc">' + escapeHtml(c.desc) + '</div>' +
+                    '<label for="notes_' + c.id + '">Notes:</label>' +
+                    '<textarea id="notes_' + c.id + '" placeholder="e.g., Dr. XYZ certificate, hospital discharge summary"></textarea>' +
+                    '</div>';
+            });
+            container.innerHTML = html;
+        }
+
+        function getVal(id) {
+            var el = document.getElementById(id);
+            return el ? String(el.value || '').trim() : '';
+        }
+
+        function getChecked(id) {
+            var el = document.getElementById(id);
+            return el && el.checked;
+        }
+
+        function generateEmail() {
+            if (!selectedLoan) return '';
+            var os = Number(selectedLoan.os) || Number(selectedLoan.outstanding) || 0;
+            var pct = Number(selectedLoan.otsPercent) || 70;
+            var otsAmt = Math.round(os * (pct / 100));
+            var provider = getProvider(selectedLoan);
+            var borrower = getVal('age') ? (selectedLoan.borrower || 'Borrower') : (selectedLoan.borrower || 'Borrower');
+            var proposedPct = getVal('proposedPct') || pct;
+            var proposedAmt = Math.round(os * (Number(proposedPct) / 100));
+
+            var parts = [];
+            parts.push('Respected Sir/Madam,');
+            parts.push('');
+            parts.push('Dear ' + provider + ' OTS Department,');
+            parts.push('');
+            parts.push('I am writing to request a compassionate one-time settlement (OTS) for my loan account, in view of genuine hardship and inability to pay the full outstanding amount.');
+            parts.push('');
+            parts.push('To the best of my knowledge, my current outstanding as per your records is Rs ' + os.toLocaleString() + '. I request a settlement at approximately ' + proposedPct + '% of the outstanding, i.e., approximately Rs ' + proposedAmt.toLocaleString() + ', due to the circumstances outlined below.');
+            parts.push('');
+
+            var senior = getChecked('seniorCitizen');
+            var age = getVal('age');
+            if (senior || age) {
+                parts.push('I am a senior citizen (aged ' + (age || '60+') + ' years) and have been facing significant health challenges.');
+                parts.push('');
+            }
+            var hb = getVal('healthBorrower');
+            if (hb) {
+                parts.push('Borrower health: ' + hb);
+                parts.push('');
+            }
+            var hs = getVal('healthSpouse');
+            if (hs) {
+                parts.push('Spouse health: ' + hs);
+                parts.push('');
+            }
+            var mh = getVal('mentalHealth');
+            if (mh) {
+                parts.push('I have also been under mental and emotional stress: ' + mh);
+                parts.push('');
+            }
+            var closed = getChecked('clinicClosed');
+            var cd = getVal('clinicDetails');
+            if (closed || cd) {
+                parts.push('My clinic/practice has been closed. ' + (cd || 'This has resulted in complete loss of professional income.'));
+                parts.push('');
+            }
+            var inc = getVal('incomeStatus');
+            if (inc) {
+                parts.push('Current income situation: ' + inc);
+                parts.push('');
+            }
+            var od = getVal('otherDebts');
+            if (od) {
+                parts.push('I have other major debts and obligations: ' + od);
+                parts.push('');
+            }
+            var since = getVal('emiSince');
+            var paid = getVal('emisPaid');
+            var sp = getVal('sincerePayment');
+            if (since || paid || sp) {
+                parts.push('I have made sincere efforts to pay EMIs regularly. ' + (since ? 'I paid regularly since ' + since + '. ' : '') + (paid ? 'I have paid approximately ' + paid + ' EMIs. ' : '') + (sp ? sp : ''));
+                parts.push('');
+            }
+            var reason = getVal('waiverReason');
+            if (reason) {
+                parts.push('Reason for requesting a larger waiver: ' + reason);
+                parts.push('');
+            }
+
+            var docList = [];
+            CHECKLIST_CATS.forEach(function(c) {
+                if (getChecked('chk_' + c.id)) docList.push(c.title);
+            });
+            if (docList.length > 0) {
+                parts.push('I am attaching the following supporting documents: ' + docList.join('; ') + '.');
+                parts.push('');
+            }
+
+            parts.push('I request the bank to kindly consider a compassionate, one-time settlement with the waiver I have proposed. I would be grateful if you could confirm in writing the approved OTS amount, conditions, and payment timeline.');
+            parts.push('');
+            parts.push('Subject to your confirmation, the figures above are as per the attached records.');
+            parts.push('');
+            parts.push('Thank you for your time and consideration.');
+            parts.push('');
+            parts.push('Yours faithfully,');
+            parts.push(borrower);
+            parts.push('Account Reference: ' + (selectedLoan.account || '—'));
+
+            return parts.join('\n');
+        }
+
+        function init() {
+            var loans = loadLoans();
+            renderLoanList(loans);
+
+            var btnGen = document.getElementById('btnGenerate');
+            if (btnGen) {
+                btnGen.addEventListener('click', function() {
+                    var email = generateEmail();
+                    var out = document.getElementById('emailOutput');
+                    if (out) out.value = email;
+                });
+            }
+
+            var btnCopy = document.getElementById('btnCopy');
+            if (btnCopy) {
+                btnCopy.addEventListener('click', function() {
+                    var out = document.getElementById('emailOutput');
+                    if (!out || !out.value) return;
+                    try {
+                        navigator.clipboard.writeText(out.value).then(function() {
+                            var ok = document.getElementById('copySuccess');
+                            if (ok) { ok.style.display = 'block'; setTimeout(function() { ok.style.display = 'none'; }, 3000); }
+                        });
+                    } catch (e) { }
+                });
+            }
+        }
+
+        init();
+    })();
+    </script>
+</body>
+</html>
