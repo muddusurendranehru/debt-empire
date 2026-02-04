@@ -97,7 +97,8 @@
             border-radius: 4px;
             border-left: 4px solid #3949ab;
         }
-        .snapshot-row strong { display: inline-block; width: 140px; }
+        .snapshot-row strong, .snapshot-row label { display: inline-block; width: 140px; margin: 0 0 4px 0; }
+        .snapshot-row input { width: 100%; max-width: 400px; }
         .note-small {
             font-size: 11px;
             color: #666;
@@ -129,6 +130,7 @@
         }
         .checklist-item .cat-title { font-weight: 600; margin-bottom: 4px; }
         .checklist-item .cat-desc { font-size: 12px; color: #666; margin-bottom: 8px; }
+        .email-subject { width: 100%; padding: 8px 10px; font-size: 13px; }
         .email-output {
             width: 100%;
             min-height: 300px;
@@ -150,6 +152,92 @@
             margin-bottom: 12px;
             border-radius: 4px;
         }
+        .other-debts-panel {
+            margin: 8px 0;
+            padding: 12px;
+            background: #f5f5f5;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+        }
+        .other-debts-panel summary {
+            cursor: pointer;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        .sub-checklist-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin: 12px 0 8px 0;
+            color: #37474f;
+        }
+        .checklist-notes-input {
+            min-height: 40px;
+        }
+        .documents-prepared-block {
+            margin: 16px 0;
+            padding: 12px;
+            background: #e8f5e9;
+            border: 1px solid #a5d6a7;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+        .documents-prepared-block h4 {
+            margin-bottom: 8px;
+            color: #1b5e20;
+        }
+        .health-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        @media (max-width: 700px) {
+            .health-grid { grid-template-columns: 1fr; }
+        }
+        .health-group-title {
+            font-size: 13px;
+            font-weight: 600;
+            margin: 14px 0 8px 0;
+            color: #37474f;
+            grid-column: 1 / -1;
+        }
+        .health-item-compact {
+            padding: 8px;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+        }
+        .health-checklist-note {
+            font-size: 11px;
+            color: #666;
+            margin-top: 12px;
+            font-style: italic;
+            grid-column: 1 / -1;
+        }
+        .ots-template-block {
+            margin: 12px 0;
+            padding: 12px;
+            background: #f5f5f5;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+        }
+        .ots-template-block summary {
+            cursor: pointer;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .ots-template-textarea {
+            width: 100%;
+            min-height: 200px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+            margin: 8px 0;
+        }
+        .ots-template-desc {
+            font-size: 12px;
+            color: #555;
+            margin: 6px 0 4px 0;
+        }
         @media (max-width: 900px) {
             .layout { flex-direction: column; }
             .left-panel, .right-panel { width: 100%; }
@@ -168,14 +256,18 @@
     <div class="layout">
         <div class="left-panel">
             <div class="section-title">Loan Selection</div>
+            <div class="no-print" style="margin-bottom:12px;">
+                <input type="file" id="importLoansFile" accept=".csv,.json" style="display:none;">
+                <button type="button" class="btn" id="btnImportLoans">Upload CSV or JSON</button>
+            </div>
             <div id="loanListContainer"></div>
         </div>
         <div class="right-panel hidden" id="caseBuilderPanel">
             <div class="section-title">Case Builder</div>
 
-            <div class="section-title">A) Loan Snapshot (Read-Only)</div>
+            <div class="section-title">A) Loan Snapshot (Editable)</div>
             <div id="loanSnapshot"></div>
-            <p class="note-small">Verify these numbers in Manager tab if needed. This page does NOT change them.</p>
+            <p class="note-small">Edit any field below. Values are used for email draft and export only. Not saved to app storage.</p>
 
             <div class="section-title">B) 🏥 Hardship & Background (Fill what applies to you)</div>
             <div class="checkbox-row">
@@ -215,13 +307,53 @@
             <p class="note-small">Use "Add File" in Manager tab to attach these documents to your loan folder.</p>
             <div id="documentChecklist"></div>
 
+            <div class="section-title" style="margin-top:16px;">Other Debts & Obligations (Global Hardship)</div>
+            <details class="other-debts-panel" open>
+                <summary>Expand / collapse</summary>
+                <div id="otherDebtsChecklist"></div>
+                <div id="templateHintNote" class="note-small" style="margin-top:12px;background:#e3f2fd;padding:8px;border-radius:4px;display:none;">Copy template from Hardship Document Templates section below.</div>
+                <p class="note-small" style="margin-top:12px;background:#fff8e1;padding:8px;border-radius:4px;">Note: These are only checklists and notes. The app does NOT move, upload, or delete any files. Please store all PDFs and originals safely in your own folders.</p>
+            </details>
+
             <div class="section-title">D) Email Generator</div>
             <p class="draft-disclaimer">This is a DRAFT. Review carefully before sending.</p>
             <button type="button" class="btn btn-generate" id="btnGenerate">📧 Generate OTS Request Email (Draft)</button>
-            <label for="emailOutput" style="margin-top:15px;">Generated Email:</label>
-            <textarea id="emailOutput" class="email-output" readonly placeholder="Click the button above to generate..."></textarea>
-            <button type="button" class="btn btn-copy" id="btnCopy">📋 Copy Email Text to Clipboard</button>
+            <label for="emailSubject" style="margin-top:15px;">Subject:</label>
+            <input type="text" id="emailSubject" class="email-subject" readonly placeholder="Generated subject will appear here">
+            <label for="emailOutput" style="margin-top:10px;">Body:</label>
+            <textarea id="emailOutput" class="email-output" placeholder="Click the button above to generate..."></textarea>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
+                <button type="button" class="btn btn-copy" id="btnCopySubject">📋 Copy Subject</button>
+                <button type="button" class="btn btn-copy" id="btnCopy">📋 Copy Body</button>
+            </div>
             <div id="copySuccess" class="copy-success" style="display:none;">✅ Email text copied! Paste into your email client.</div>
+
+            <details class="evidence-helper-block">
+                <summary>Attached Evidence (from evidence/ots/)</summary>
+                <label for="evidenceFilenames" style="margin-top:8px;">Paste filenames you will attach (one per line, from evidence/ots/):</label>
+                <textarea id="evidenceFilenames" class="evidence-textarea" placeholder="e.g. staff_salary_cert.pdf&#10;landlord_closure_oct24.pdf&#10;pharma_meghana_1995.pdf"></textarea>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
+                    <button type="button" class="btn btn-copy" id="btnGenerateEvidence">Generate evidence paragraph</button>
+                    <button type="button" class="btn btn-copy" id="btnInsertEvidence" style="background:#5c6bc0;">Insert into email body</button>
+                </div>
+                <label for="evidenceParagraph" style="margin-top:12px;">Generated paragraph:</label>
+                <textarea id="evidenceParagraph" class="evidence-textarea" readonly placeholder="Click Generate to create bullet list from filenames."></textarea>
+                <p class="note-small" style="margin-top:8px;">Evidence files live in evidence/ots/. Paste only filenames you will actually attach.</p>
+            </details>
+
+            <div class="section-title" style="margin-top:24px;">E) Hardship Document Templates (Document Templates)</div>
+            <p class="note-small">Editable templates to support hardship claims. Replace [placeholders] with your details. Copy and use on letterhead or print. Applies to your case pack for all loans.</p>
+            <div id="otsTemplatesSection"></div>
+
+            <div id="documentsPreparedBlock" class="documents-prepared-block" style="display:none;"></div>
+
+            <div class="section-title" style="margin-top:24px;">Share with Lawyer (Human-in-the-Loop)</div>
+            <p class="note-small">Export full case pack for review before sending. Once email is sent, legal commitments apply.</p>
+            <div class="no-print" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
+                <button type="button" class="btn" id="btnExportJSON" style="background:#5c6bc0;">Save as JSON</button>
+                <button type="button" class="btn" id="btnExportCSV" style="background:#43a047;">Save as CSV</button>
+                <button type="button" class="btn" id="btnExportPDF" style="background:#e53935;">Save as PDF</button>
+            </div>
         </div>
     </div>
 
@@ -229,14 +361,60 @@
     (function() {
         'use strict';
         var selectedLoan = null;
-        var CHECKLIST_CATS = [
-            { id: 'doc1', title: 'Health certificates & medical reports', desc: 'Doctor certificates, hospital records, diagnostic reports for borrower and spouse.' },
-            { id: 'doc2', title: 'Mental health / psychological reports', desc: 'If applicable.' },
-            { id: 'doc3', title: 'Clinic/business closure proof', desc: 'Closure notice, rent termination, license non-renewal, photos, landlord letters, etc.' },
-            { id: 'doc4', title: 'No-income / low-income proofs', desc: 'Bank statements showing no inflow, CA letter, pension details (if any), etc.' },
-            { id: 'doc5', title: 'Other loan and debt statements', desc: 'Statements from other lenders/credit cards showing parallel obligations.' },
-            { id: 'doc6', title: 'Age and ID proof', desc: 'Aadhaar, PAN, passport, senior citizen card if applicable.' },
-            { id: 'doc7', title: 'Past payment statements', desc: 'Account statements showing years of EMI payments and good conduct.' }
+        var sessionLoans = [];
+        var LOAN_BANK_DOCS = [
+            { id: 'welcomeLetter', title: 'Welcome / sanction letter', desc: 'Bank welcome or sanction letter for this loan.' },
+            { id: 'rps', title: 'RPS (repayment schedule)', desc: 'Repayment schedule from the bank.' },
+            { id: 'soa', title: 'SOA (statement of account)', desc: 'Statement of account showing current dues.' },
+            { id: 'interestCertificate', title: 'Interest certificate / interest summary', desc: 'Interest certificate or summary for tax/records.' },
+            { id: 'emiProof', title: 'EMI paid proof: bank statements / EMI debit screenshots', desc: 'Bank statements or screenshots showing EMI debits.' },
+            { id: 'foreclosureLetters', title: 'Latest foreclosure / demand / reminder letters', desc: 'e.g., FORECLOSURE_xxx.pdf, demand letters.' },
+            { id: 'earlierOTS', title: 'Any earlier OTS or restructuring offers', desc: 'Prior OTS offers or restructuring letters from bank.' }
+        ];
+        var LOAN_HARDSHIP_DOCS = [
+            { id: 'borrowerHealth', title: 'Borrower health certificates and medical reports', desc: 'Doctor certificates, hospital records for borrower.' },
+            { id: 'spouseHealth', title: 'Spouse health certificates and medical reports', desc: 'Medical reports for spouse if applicable.' },
+            { id: 'mentalHealth', title: 'Mental health / psychological reports (if any)', desc: 'Psychological or psychiatric reports.' },
+            { id: 'noIncomeProofs', title: 'No-income / low-income proofs for the borrower', desc: 'Bank statements, CA letter, pension statement.' },
+            { id: 'pastPaymentStatements', title: 'Past payment statements for this loan', desc: 'To show sincere payment history.' }
+        ];
+        var HEALTH_ITEMS = [
+            { id: 'borrower_prescriptions', title: 'Borrower specialist prescriptions / consult notes', group: 'borrower' },
+            { id: 'borrower_lab_reports', title: 'Borrower lab and diagnostic reports (blood tests, scans)', group: 'borrower' },
+            { id: 'borrower_hospital_summaries', title: 'Borrower hospital admission / discharge summaries', group: 'borrower' },
+            { id: 'borrower_work_capacity', title: 'Doctor letter about reduced work capacity / disability', group: 'borrower' },
+            { id: 'borrower_medical_bills', title: 'High medical bills (hospital + pharmacy invoices)', group: 'borrower' },
+            { id: 'spouse_prescriptions', title: 'Spouse specialist prescriptions / consult notes', group: 'spouse' },
+            { id: 'spouse_lab_reports', title: 'Spouse lab / diagnostic reports', group: 'spouse' },
+            { id: 'spouse_hospital_summaries', title: 'Spouse hospital admission / discharge summaries', group: 'spouse' },
+            { id: 'spouse_doctor_letter', title: 'Spouse doctor letter about serious illness / dependency', group: 'spouse' },
+            { id: 'mental_psych_notes', title: 'Psychiatrist / psychologist notes or certificates', group: 'mental' },
+            { id: 'mental_prescriptions', title: 'Mental health prescriptions (antidepressants, antipsychotics, etc.)', group: 'mental' },
+            { id: 'income_bank_statements', title: 'Bank statements showing medical outflows and reduced income', group: 'income' },
+            { id: 'income_employer_letters', title: 'Employer / clinic letters (job loss, unpaid leave, reduced earnings)', group: 'income' },
+            { id: 'income_ca_letter', title: 'Any CA/doctor letter explaining income disruption due to illness', group: 'income' }
+        ];
+        var OTHER_DEBTS_ITEMS = [
+            { id: 'homeLoan', label: 'Home loan (HDFC / other) – add notes (lender, loan number)', category: 'secured' },
+            { id: 'lapLoans', label: 'LAP / mortgage loans', category: 'secured' },
+            { id: 'labDebts', label: 'Lab/vendor dues and legal notices', category: 'business' },
+            { id: 'pharmaBills', label: 'Pharmacy/distributor bills overdue', category: 'business' },
+            { id: 'staffSalary', label: 'Staff salary arrears (12+ months)', category: 'business' },
+            { id: 'govtTaxes', label: 'Any pending government taxes/fees (GST, professional tax)', category: 'business' },
+            { id: 'clinicClosure', label: 'Clinic closure certificate from landlord', category: 'business' },
+            { id: 'govtLetters', label: 'Letters to DMHO/Drug Controller for closure', category: 'business' },
+            { id: 'nocLandlord', label: 'NOC / correspondence from premises owner / landlord', category: 'business' },
+            { id: 'personalLoans', label: 'Personal loans and credit cards with significant outstanding', category: 'unsecured' },
+            { id: 'legalNotices', label: 'Cheque/NI Act summons or other legal notices', category: 'legal' },
+            { id: 'otherHardship', label: 'Additional hardship documents (explain in notes)', category: 'other' }
+        ];
+        var OTS_TEMPLATES = [
+            { id: 'tpl1', title: '1. Pharmacy/Drug Distributor Overdue Bills Notice', desc: 'For pharma distributors to demand settlement of unpaid medicine supply bills.', content: '[Distributor Letterhead]\n\nNOTICE OF OUTSTANDING PAYMENT\n\nDate: [DD/MM/YYYY]\n\nTo:\nDr. Muddu Surendra Nehru\nHOMA Clinic Private Limited\n[Address]\nGachibowli, Hyderabad – 500032\n\nSubject: Demand for settlement of overdue pharmaceutical bills\n\nDear Dr. Muddu,\n\nThis is to bring to your notice that the following pharmaceutical supply bills remain outstanding and unpaid:\n\nInvoice No.        Date          Amount (Rs)      Days Overdue\n---------------------------------------------------------------\nPH/2024/1234    15-Mar-2024      47,500             325 days\nPH/2024/1567    10-May-2024      38,200             269 days\nPH/2024/1890    22-Jul-2024      52,100             197 days\nPH/2024/2145    05-Sep-2024      29,850             152 days\nPH/2024/2398    18-Nov-2024       41,300              78 days\n\nTotal Outstanding: Rs 2,08,950/-\n\nDespite repeated reminders, we have not received payment. We understand your clinic has faced revenue difficulties and health challenges. However, we urge you to clear the dues at the earliest or propose a settlement plan.\n\nFailure to respond within 15 days will compel us to initiate legal proceedings for recovery.\n\nRegards,\n[Authorized Signatory]\n[Pharma Distributor Name]\n[Contact Details]' },
+            { id: 'tpl2', title: '2. Staff Salary Dues Certificate', desc: 'For staff to certify unpaid salary arrears due to clinic closure.', content: 'CERTIFICATE OF UNPAID SALARY DUES\n\nDate: [DD/MM/YYYY]\n\nTo Whom It May Concern,\n\nThis is to certify that I, [Staff Name], have been employed at HOMA Clinic Private Limited, Gachibowli, Hyderabad, as [Designation] since [Month Year].\n\nDue to the clinic\'s financial difficulties and subsequent closure in October 2024, the following salary dues remain unpaid:\n\nMonth                Amount Due (Rs)\n--------------------------------------\nJanuary 2024              18,000\nFebruary 2024             18,000\nMarch 2024                18,000\nApril 2024                18,000\nMay 2024                  18,000\nJune 2024                 18,000\nJuly 2024                 18,000\nAugust 2024               18,000\nSeptember 2024            18,000\nOctober 2024               9,000 (partial)\n\nTotal Outstanding: Rs 1,71,000/-\n\nI understand that Dr. Surendra has been facing severe health and financial hardships and is working to settle all dues. I am willing to wait for payment once his financial situation improves.\n\nSincerely,\n[Staff Signature]\n[Name, Designation]\n[Contact Number]\n[Date]' },
+            { id: 'tpl3', title: '3. Medical/Lab Vendor Dues Statement', desc: 'For lab and medical consumables vendors to list outstanding invoices.', content: '[Vendor/Supplier Letterhead]\n\nSTATEMENT OF DUES\n\nDate: [DD/MM/YYYY]\n\nTo:\nDr. Muddu Surendra Nehru\nHOMA Clinic Private Limited\nGachibowli, Hyderabad – 500032\n\nSubject: Outstanding payments for medical consumables and equipment\n\nDear Dr. Surendra,\n\nWe refer to our ongoing supply relationship for medical consumables, diagnostic kits, and equipment. The following invoices remain unpaid:\n\nInvoice No.        Date          Description                Amount (Rs)\n------------------------------------------------------------------------\nVS/2024/078     12-Feb-2024    Diagnostic consumables       32,400\nVS/2024/129     05-Apr-2024    Medical gloves & syringes    18,700\nVS/2024/187     20-Jun-2024    Lab reagents                 45,600\nVS/2024/245     15-Aug-2024    PPE kits and sanitizers      27,300\n\nTotal Outstanding: Rs 1,24,000/-\n\nWe understand the clinic has closed due to financial and health-related hardships. We request you settle these dues or propose a mutually agreeable payment plan.\n\nPlease respond within 30 days.\n\nYours sincerely,\n[Authorized Signatory]\n[Vendor Name & Contact]' },
+            { id: 'tpl4', title: '4. Landlord Clinic Closure Certificate', desc: 'For landlord to certify clinic vacated and closure due to hardship.', content: 'CERTIFICATE OF CLINIC CLOSURE\n\nDate: [DD/MM/YYYY]\n\nTo Whom It May Concern,\n\nThis is to certify that HOMA Clinic Private Limited, operated by Dr. Muddu Surendra Nehru, was located at the following premises owned by me:\n\nAddress:\n[Plot No., Building Name]\nGachibowli, Hyderabad – 500032\n\nLease Period: [Start Date] to [End Date / Ongoing]\n\nI hereby confirm that:\n\n1. The clinic ceased operations on 30th October 2024 due to the owner\'s severe health issues and financial difficulties.\n\n2. The premises have been vacated and handed over to me on [Date], OR remain locked and unused since closure.\n\n3. Dr. Surendra has been a responsible tenant. The closure was due to unavoidable medical and revenue hardships, not willful default.\n\n4. I have no objection to Dr. Surendra using this certificate for any official or legal purposes related to debt settlement or closure formalities.\n\nThis certificate is issued upon request.\n\nSincerely,\n[Landlord Signature]\n[Name of Landlord/Owner]\n[Contact Number]\n[Address]\n[Date]' },
+            { id: 'tpl5', title: '5. DMHO Clinic Closure Permission Request', desc: 'Formal request to District Medical & Health Officer for clinic registration closure.', content: '[Your Letterhead or Personal Details]\n\nDr. Muddu Surendra Nehru\nMD, Professor of Medicine\nHOMA Clinic Private Limited\nGachibowli, Hyderabad – 500032\nMobile: [Your Number]\nEmail: [Your Email]\n\nDate: [DD/MM/YYYY]\n\nTo,\nThe District Medical & Health Officer (DMHO)\nOffice of the District Medical & Health Officer\nHyderabad District, Telangana\n\nSubject: Request for permission to close clinic due to severe health and financial hardships\n\nRespected Sir/Madam,\n\nI am Dr. Muddu Surendra Nehru, MD, operating HOMA Clinic Private Limited at Gachibowli, Hyderabad (Registration No: [Clinic Registration Number], issued on [Date]).\n\nI am writing to formally request permission to close the clinic and surrender the clinic registration due to the following unavoidable circumstances:\n\n1. Severe Health Conditions:\nI am 62 years old and suffering from multiple serious health conditions including diabetes, hypertension, and chronic kidney disease. My spouse is battling cancer, seizure disorder, and hypertension, requiring constant care and significant medical expenses. Due to these health challenges, I am unable to continue clinical practice.\n\n2. Financial Hardship:\nThe clinic has been facing severe revenue losses since early 2024. I have been unable to meet operational costs, staff salaries, supplier dues, and loan obligations. The clinic was forced to stop operations on 30th October 2024.\n\n3. Outstanding Debts:\nI am burdened with multiple loan obligations (HDFC, Bajaj Finance, L&T Finance, Aditya Birla, Tata Finance) and vendor/supplier dues totaling over Rs [Amount]. I am currently negotiating one-time settlements with lenders and require official closure documentation to support my hardship claims.\n\nRequest:\nI respectfully request the DMHO office to:\n- Grant permission to close HOMA Clinic Private Limited.\n- Cancel the clinic registration (Registration No: [Number]).\n- Issue a Closure Certificate for official and legal purposes.\n\nI am enclosing the following documents for your consideration:\n1. Copy of clinic registration\n2. Medical certificates (self and spouse)\n3. Landlord NOC / premises handover letter\n4. Financial hardship statement\n\nI assure you that all patient records have been safely archived and no pending patient liabilities exist. I am available for any clarifications or inspections.\n\nThank you for your understanding and cooperation.\n\nYours sincerely,\nDr. Muddu Surendra Nehru\nMD, Professor of Medicine\n[Signature]\n[Date]\n\nEnclosures: [List]' },
+            { id: 'tpl6', title: '6. Pharmacy Drug Licence Cancellation Request', desc: 'Formal request to Drugs Control Administration for licence surrender.', content: '[Your Letterhead or Personal Details]\n\nDr. Muddu Surendra Nehru\nHOMA Clinic Private Limited\nGachibowli, Hyderabad – 500032\nMobile: [Your Number]\n\nDate: [DD/MM/YYYY]\n\nTo,\nThe Drugs Control Administration\nGovernment of Telangana\n[Address of Drug Controller\'s Office]\nHyderabad, Telangana\n\nSubject: Request for cancellation of Pharmacy Drug Licence due to clinic closure and financial hardship\n\nRespected Sir/Madam,\n\nI, Dr. Muddu Surendra Nehru, holder of Pharmacy Drug Licence No. [Licence Number], issued on [Date] for HOMA Clinic Private Limited, Gachibowli, Hyderabad, hereby request the cancellation and surrender of the said licence.\n\nReasons for Cancellation:\n\n1. Clinic Closure: The clinic ceased operations on 30th October 2024 due to severe financial losses and revenue hardships.\n\n2. Health Grounds: I am suffering from serious health conditions (diabetes, hypertension, chronic kidney disease) that prevent me from continuing medical practice. My spouse is also critically ill with cancer and seizure disorders.\n\n3. Financial Inability: I am unable to maintain the pharmacy operations, renew stocks, pay supplier dues, or meet regulatory compliance costs. I have outstanding debts to multiple lenders and am pursuing debt settlements.\n\n4. No Current Operations: The pharmacy has been non-functional since October 2024. All remaining stocks have been disposed of as per regulations, and the premises have been vacated.\n\nRequest:\nI kindly request your office to:\n- Accept the surrender of Pharmacy Drug Licence No. [Licence Number].\n- Cancel the licence from the records.\n- Issue a Cancellation Certificate for official and legal purposes.\n\nI am enclosing the following documents:\n1. Original Pharmacy Drug Licence (or copy if original is lost)\n2. Medical certificates (self and spouse)\n3. Clinic closure certificate / landlord NOC\n4. Financial hardship statement\n\nI am available for any inspections, clarifications, or formalities required.\n\nThank you for your understanding and cooperation during this difficult period.\n\nYours sincerely,\nDr. Muddu Surendra Nehru\n[Signature]\n[Date]\n\nEnclosures: [List]' }
         ];
 
         function getProvider(loan) {
@@ -270,7 +448,7 @@
             var container = document.getElementById('loanListContainer');
             if (!container) return;
             if (loans.length === 0) {
-                container.innerHTML = '<div class="no-loans">No loans found. Complete Steps 1-3 first.</div>';
+                container.innerHTML = '<div class="no-loans">No loans found. Load from app (Steps 1-3) or upload CSV/JSON above.</div>';
                 return;
             }
             var html = '<table class="loan-table"><thead><tr><th>Provider</th><th>Borrower</th><th>Account</th><th>OS (Rs)</th><th>OTS %</th><th>Action</th></tr></thead><tbody>';
@@ -311,21 +489,41 @@
             var otsAmt = Math.round(os * (pct / 100));
             var provider = getProvider(loan);
 
+            var sav = os - otsAmt;
             var snap = document.getElementById('loanSnapshot');
             if (snap) {
                 snap.innerHTML =
-                    '<div class="snapshot-row"><strong>Provider:</strong> ' + escapeHtml(provider) + '</div>' +
-                    '<div class="snapshot-row"><strong>Borrower:</strong> ' + escapeHtml(loan.borrower || '—') + '</div>' +
-                    '<div class="snapshot-row"><strong>Account:</strong> ' + escapeHtml(loan.account || '—') + '</div>' +
-                    '<div class="snapshot-row"><strong>Outstanding:</strong> Rs ' + os.toLocaleString() + '</div>' +
-                    '<div class="snapshot-row"><strong>EMI:</strong> Rs ' + (loan.emi || 0).toLocaleString() + '</div>' +
-                    '<div class="snapshot-row"><strong>Proposed OTS %:</strong> ' + pct + '%</div>' +
-                    '<div class="snapshot-row"><strong>OTS Amount:</strong> Rs ' + otsAmt.toLocaleString() + '</div>' +
-                    '<div class="snapshot-row"><strong>Total Savings:</strong> Rs ' + (os - otsAmt).toLocaleString() + '</div>';
+                    '<div class="snapshot-row"><label>Provider:</label><input type="text" id="snapProvider" value="' + escapeHtml(provider) + '" placeholder="e.g. HDFC, L&T"></div>' +
+                    '<div class="snapshot-row"><label>Borrower:</label><input type="text" id="snapBorrower" value="' + escapeHtml(loan.borrower || '') + '" placeholder="Borrower name"></div>' +
+                    '<div class="snapshot-row"><label>Account:</label><input type="text" id="snapAccount" value="' + escapeHtml(loan.account || '') + '" placeholder="Account reference"></div>' +
+                    '<div class="snapshot-row"><label>Outstanding (Rs):</label><input type="number" id="snapOs" value="' + os + '" min="0"></div>' +
+                    '<div class="snapshot-row"><label>EMI (Rs):</label><input type="number" id="snapEmi" value="' + (loan.emi || 0) + '" min="0"></div>' +
+                    '<div class="snapshot-row"><label>Proposed OTS %:</label><input type="number" id="snapPct" value="' + pct + '" min="1" max="100"></div>' +
+                    '<div class="snapshot-row"><label>OTS Amount (Rs):</label><input type="number" id="snapOtsAmt" value="' + otsAmt + '" min="0" readonly></div>' +
+                    '<div class="snapshot-row"><label>Total Savings (Rs):</label><input type="number" id="snapSavings" value="' + sav + '" min="0" readonly></div>';
             }
+            (function attachSnapshotRecalc() {
+                var so = document.getElementById('snapOs');
+                var sp = document.getElementById('snapPct');
+                var oa = document.getElementById('snapOtsAmt');
+                var sv = document.getElementById('snapSavings');
+                function recalc() {
+                    var osVal = parseFloat(so && so.value) || 0;
+                    var pctVal = Math.max(1, Math.min(100, parseFloat(sp && sp.value) || 70));
+                    var ots = Math.round(osVal * (pctVal / 100));
+                    var sav = osVal - ots;
+                    if (oa) oa.value = ots;
+                    if (sv) sv.value = sav;
+                }
+                if (so) so.addEventListener('input', recalc);
+                if (so) so.addEventListener('change', recalc);
+                if (sp) sp.addEventListener('input', recalc);
+                if (sp) sp.addEventListener('change', recalc);
+            })();
 
             clearHardshipFields();
             renderChecklist();
+            renderOtsTemplates();
         }
 
         function clearHardshipFields() {
@@ -335,29 +533,136 @@
                 if (el.type === 'checkbox') el.checked = false;
                 else el.value = '';
             });
-            CHECKLIST_CATS.forEach(function(c) {
-                var cb = document.getElementById('chk_' + c.id);
-                var notes = document.getElementById('notes_' + c.id);
+            LOAN_BANK_DOCS.forEach(function(c) {
+                var cb = document.getElementById('chk_loan_' + c.id);
+                var notes = document.getElementById('notes_loan_' + c.id);
+                if (cb) cb.checked = false;
+                if (notes) notes.value = '';
+            });
+            HEALTH_ITEMS.forEach(function(c) {
+                var cb = document.getElementById('chk_health_' + c.id);
+                var notes = document.getElementById('notes_health_' + c.id);
+                if (cb) cb.checked = false;
+                if (notes) notes.value = '';
+            });
+            OTHER_DEBTS_ITEMS.forEach(function(it) {
+                var cb = document.getElementById('chk_other_' + it.id);
+                var notes = document.getElementById('notes_other_' + it.id);
                 if (cb) cb.checked = false;
                 if (notes) notes.value = '';
             });
             var out = document.getElementById('emailOutput');
             if (out) out.value = '';
+            var subj = document.getElementById('emailSubject');
+            if (subj) subj.value = '';
         }
 
         function renderChecklist() {
             var container = document.getElementById('documentChecklist');
             if (!container) return;
             var html = '';
-            CHECKLIST_CATS.forEach(function(c) {
+            html += '<div class="sub-checklist-title">1. Loan-specific bank documents (per-loan)</div>';
+            LOAN_BANK_DOCS.forEach(function(c) {
                 html += '<div class="checklist-item">' +
-                    '<div class="checkbox-row"><input type="checkbox" id="chk_' + c.id + '"><label for="chk_' + c.id + '" style="display:inline;width:auto;">' + escapeHtml(c.title) + '</label></div>' +
+                    '<div class="checkbox-row"><input type="checkbox" id="chk_loan_' + c.id + '"><label for="chk_loan_' + c.id + '" style="display:inline;width:auto;">[ ] I have this: ' + escapeHtml(c.title) + '</label></div>' +
                     '<div class="cat-desc">' + escapeHtml(c.desc) + '</div>' +
-                    '<label for="notes_' + c.id + '">Notes:</label>' +
-                    '<textarea id="notes_' + c.id + '" placeholder="e.g., Dr. XYZ certificate, hospital discharge summary"></textarea>' +
+                    '<label for="notes_loan_' + c.id + '">Notes:</label>' +
+                    '<textarea id="notes_loan_' + c.id + '" class="checklist-notes-input" placeholder="e.g., HDFCHOMELOANWELCOMLETTER1.pdf"></textarea>' +
                     '</div>';
             });
+            html += '<div class="sub-checklist-title">2. Medical &amp; Income Hardship Evidence (Borrower &amp; Family)</div>';
+            html += '<div class="health-grid">';
+            var groupOrder = ['borrower', 'spouse', 'mental', 'income'];
+            var groupLabels = { borrower: 'Borrower medical records', spouse: 'Spouse medical records', mental: 'Mental health records', income: 'Income impact from illness' };
+            groupOrder.forEach(function(g) {
+                html += '<div class="health-group-title">' + groupLabels[g] + '</div>';
+                var items = HEALTH_ITEMS.filter(function(x) { return x.group === g; });
+                items.forEach(function(c) {
+                    html += '<div class="health-item-compact">' +
+                        '<div class="checkbox-row"><input type="checkbox" id="chk_health_' + c.id + '"><label for="chk_health_' + c.id + '" style="display:inline;width:auto;">[ ] ' + escapeHtml(c.title) + '</label></div>' +
+                        '<label for="notes_health_' + c.id + '">Notes:</label>' +
+                        '<textarea id="notes_health_' + c.id + '" class="checklist-notes-input" style="min-height:36px;" placeholder="e.g., filenames, dates"></textarea>' +
+                        '</div>';
+                });
+            });
+            html += '<p class="health-checklist-note">This checklist only records which documents you have. The app never uploads, moves, or deletes your actual medical files. Keep all originals safely in your own folders.</p>';
+            html += '</div>';
             container.innerHTML = html;
+            renderOtherDebtsChecklist();
+        }
+
+        function renderOtherDebtsChecklist() {
+            var container = document.getElementById('otherDebtsChecklist');
+            if (!container) return;
+            var html = '';
+            var catOrder = ['secured', 'business', 'unsecured', 'legal', 'other'];
+            var catLabels = { secured: 'Other secured loans', business: 'Business / clinic related dues', unsecured: 'Other unsecured loans & credit cards', legal: 'Legal notices & summons', other: 'Any other critical documents' };
+            catOrder.forEach(function(cat) {
+                var items = OTHER_DEBTS_ITEMS.filter(function(x) { return x.category === cat; });
+                if (items.length === 0) return;
+                html += '<div class="sub-checklist-title">' + catLabels[cat] + '</div>';
+                items.forEach(function(it) {
+                    html += '<div class="checklist-item">' +
+                        '<div class="checkbox-row"><input type="checkbox" id="chk_other_' + it.id + '"><label for="chk_other_' + it.id + '" style="display:inline;width:auto;">[ ] I have supporting documents: ' + escapeHtml(it.label) + '</label></div>' +
+                        '<label for="notes_other_' + it.id + '">Notes:</label>' +
+                        '<textarea id="notes_other_' + it.id + '" class="checklist-notes-input" placeholder="Short description or filenames"></textarea>' +
+                        '</div>';
+                });
+            });
+            container.innerHTML = html;
+            attachTemplateHintListeners();
+            updateTemplateHintNote();
+        }
+
+        var TEMPLATE_RELATED_IDS = ['pharmaBills', 'staffSalary', 'labDebts', 'clinicClosure', 'govtLetters'];
+        function updateTemplateHintNote() {
+            var hint = document.getElementById('templateHintNote');
+            if (!hint) return;
+            var anyChecked = TEMPLATE_RELATED_IDS.some(function(id) {
+                var el = document.getElementById('chk_other_' + id);
+                return el && el.checked;
+            });
+            hint.style.display = anyChecked ? 'block' : 'none';
+        }
+        function attachTemplateHintListeners() {
+            TEMPLATE_RELATED_IDS.forEach(function(id) {
+                var el = document.getElementById('chk_other_' + id);
+                if (el) {
+                    el.removeEventListener('change', updateTemplateHintNote);
+                    el.addEventListener('change', updateTemplateHintNote);
+                }
+            });
+        }
+
+        function renderOtsTemplates() {
+            var container = document.getElementById('otsTemplatesSection');
+            if (!container) return;
+            if (document.getElementById('tpl_tpl1')) return;
+            var html = '';
+            OTS_TEMPLATES.forEach(function(t) {
+                var desc = (t.desc || '').trim();
+                html += '<details class="ots-template-block" open>' +
+                    '<summary>' + escapeHtml(t.title) + '</summary>' +
+                    (desc ? '<p class="ots-template-desc">' + escapeHtml(desc) + '</p>' : '') +
+                    '<p class="note-small">Replace [placeholders] with your details.</p>' +
+                    '<textarea id="tpl_' + t.id + '" class="ots-template-textarea" rows="12">' + escapeHtml(t.content || '') + '</textarea>' +
+                    '<button type="button" class="btn btn-copy" data-tpl-id="' + t.id + '">Copy to clipboard</button>' +
+                    '</details>';
+            });
+            container.innerHTML = html;
+            container.querySelectorAll('button[data-tpl-id]').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var id = btn.getAttribute('data-tpl-id');
+                    var ta = document.getElementById('tpl_' + id);
+                    if (!ta || !ta.value) return;
+                    try {
+                        navigator.clipboard.writeText(ta.value).then(function() {
+                            var ok = document.getElementById('copySuccess');
+                            if (ok) { ok.textContent = 'Template copied to clipboard!'; ok.style.display = 'block'; setTimeout(function() { ok.style.display = 'none'; ok.textContent = 'Email text copied! Paste into your email client.'; }, 2000); }
+                        });
+                    } catch (e) {}
+                });
+            });
         }
 
         function getVal(id) {
@@ -370,108 +675,644 @@
             return el && el.checked;
         }
 
-        function generateEmail() {
-            if (!selectedLoan) return '';
-            var os = Number(selectedLoan.os) || Number(selectedLoan.outstanding) || 0;
-            var pct = Number(selectedLoan.otsPercent) || 70;
-            var otsAmt = Math.round(os * (pct / 100));
-            var provider = getProvider(selectedLoan);
-            var borrower = getVal('age') ? (selectedLoan.borrower || 'Borrower') : (selectedLoan.borrower || 'Borrower');
-            var proposedPct = getVal('proposedPct') || pct;
-            var proposedAmt = Math.round(os * (Number(proposedPct) / 100));
+        function parseEvidenceFilenames(text) {
+            if (!text || typeof text !== 'string') return [];
+            return text.split(/\r?\n/).map(function(line) {
+                line = line.trim();
+                line = line.replace(/^evidence\/ots\/?/i, '').trim();
+                line = line.replace(/\.[^.]+$/, '');
+                return line;
+            }).filter(function(s) { return s.length > 0; });
+        }
 
+        function filenameToDescription(fname) {
+            var s = (fname || '').toLowerCase();
+            if (/staff|salary/.test(s)) return 'Staff salary dues certificate';
+            if (/landlord|closure|noc/.test(s)) return 'Landlord certificate of clinic closure Oct 2024';
+            if (/lab|vendor|supplier/.test(s)) return 'Lab supplier dues and legal notices';
+            if (/dmho|closure/.test(s)) return 'DMHO clinic closure request letter';
+            if (/drug|licen[sc]e/.test(s)) return 'Drug licence cancellation request';
+            if (/gst|tax|professional/.test(s)) return 'GST and professional tax arrears';
+            if (/hospital|discharge|health|medical/.test(s)) return 'Medical/hospital documents';
+            if (/pharma|distributor|pharmacy/.test(s)) {
+                var amt = s.match(/\d{3,5}/);
+                var vendor = s.replace(/[^a-z]/g, ' ').split(/\s+/).filter(function(w) { return w.length > 3; }).find(function(w) {
+                    return !/pharma|dist|bill|pdf|ots|evidence/.test(w);
+                });
+                var part = 'Pharma/distributor bill';
+                if (amt) part += ' for Rs ' + amt[0].replace(/(\d)(\d{3})$/, '$1,$2');
+                if (vendor) part += ' from ' + vendor.charAt(0).toUpperCase() + vendor.slice(1);
+                return part;
+            }
+            return (fname || '').replace(/\.[^.]+$/, '') || 'Other document';
+        }
+
+        function generateEvidenceParagraph(filenames) {
+            var seen = {};
+            var bullets = [];
+            filenames.forEach(function(f) {
+                var desc = filenameToDescription(f);
+                if (!seen[desc]) { seen[desc] = true; bullets.push(desc); }
+            });
+            if (bullets.length === 0) return '';
+            return 'Documents enclosed:\n' + bullets.map(function(b) { return '• ' + b; }).join('\n');
+        }
+
+        function insertEvidenceIntoEmail() {
+            var paraEl = document.getElementById('evidenceParagraph');
+            var bodyEl = document.getElementById('emailOutput');
+            if (!paraEl || !bodyEl) return;
+            var para = (paraEl.value || '').trim();
+            if (!para) return;
+            var body = bodyEl.value || '';
+            var insertText = '\n\n' + para + '\n\n';
+            var idx = body.indexOf('Documents');
+            if (idx < 0) idx = body.indexOf('Closing and confirmation');
+            if (idx >= 0) {
+                body = body.slice(0, idx) + insertText + body.slice(idx);
+            } else {
+                body = body + insertText;
+            }
+            bodyEl.value = body;
+        }
+
+        function collectCaseDataForEmail() {
+            var provider = getVal('snapProvider') || (selectedLoan ? getProvider(selectedLoan) : '') || 'Unknown';
+            var borrower = getVal('snapBorrower') || (selectedLoan ? selectedLoan.borrower : '') || 'Borrower';
+            var account = getVal('snapAccount') || (selectedLoan ? selectedLoan.account : '') || '—';
+            var os = Number(getVal('snapOs')) || (selectedLoan ? (Number(selectedLoan.os) || Number(selectedLoan.outstanding) || 0) : 0);
+            var snapPct = getVal('snapPct') || (selectedLoan ? selectedLoan.otsPercent : 70);
+            var proposedPct = getVal('proposedPct') || snapPct || 70;
+            var proposedAmt = Math.round(os * (Number(proposedPct) / 100));
+            var loanBankDocsChecked = [];
+            LOAN_BANK_DOCS.forEach(function(c) {
+                if (getChecked('chk_loan_' + c.id)) loanBankDocsChecked.push(c.title);
+            });
+            var healthBorrowerChecked = HEALTH_ITEMS.filter(function(c) { return c.group === 'borrower' && getChecked('chk_health_' + c.id); });
+            var healthSpouseChecked = HEALTH_ITEMS.filter(function(c) { return c.group === 'spouse' && getChecked('chk_health_' + c.id); });
+            var healthMentalChecked = HEALTH_ITEMS.filter(function(c) { return c.group === 'mental' && getChecked('chk_health_' + c.id); });
+            var healthIncomeChecked = HEALTH_ITEMS.filter(function(c) { return c.group === 'income' && getChecked('chk_health_' + c.id); });
+            var otherDebtsChecked = [];
+            OTHER_DEBTS_ITEMS.forEach(function(it) {
+                if (getChecked('chk_other_' + it.id)) otherDebtsChecked.push(it.label);
+            });
+            var docList = loanBankDocsChecked.concat(healthBorrowerChecked.map(function(c) { return c.title; })).concat(healthSpouseChecked.map(function(c) { return c.title; })).concat(healthMentalChecked.map(function(c) { return c.title; })).concat(healthIncomeChecked.map(function(c) { return c.title; })).concat(otherDebtsChecked);
+            return {
+                provider: provider,
+                borrower: borrower,
+                account: account,
+                outstanding: os,
+                requestedPct: proposedPct,
+                requestedAmt: proposedAmt,
+                seniorCitizen: getChecked('seniorCitizen'),
+                age: getVal('age'),
+                healthBorrower: getVal('healthBorrower'),
+                healthSpouse: getVal('healthSpouse'),
+                mentalHealth: getVal('mentalHealth'),
+                clinicClosed: getChecked('clinicClosed'),
+                clinicDetails: getVal('clinicDetails'),
+                incomeStatus: getVal('incomeStatus'),
+                otherDebts: getVal('otherDebts'),
+                emiSince: getVal('emiSince'),
+                emisPaid: getVal('emisPaid'),
+                sincerePayment: getVal('sincerePayment'),
+                waiverReason: getVal('waiverReason'),
+                loanBankDocsChecked: loanBankDocsChecked,
+                healthBorrowerChecked: healthBorrowerChecked,
+                healthSpouseChecked: healthSpouseChecked,
+                healthMentalChecked: healthMentalChecked,
+                healthIncomeChecked: healthIncomeChecked,
+                otherDebtsChecked: otherDebtsChecked,
+                docList: docList
+            };
+        }
+
+        function buildOtsEmailSubject(d) {
+            var acc = (d.account || '—').replace(/^—+/, '');
+            if (!acc) acc = 'Loan';
+            else acc = 'Loan ' + acc;
+            return 'Request for compassionate one-time settlement – ' + acc + ' – medical and financial hardship';
+        }
+
+        function buildOtsEmailBody(d) {
             var parts = [];
             parts.push('Respected Sir/Madam,');
             parts.push('');
-            parts.push('Dear ' + provider + ' OTS Department,');
+            if (d.provider) parts.push('Dear ' + d.provider + ' – OTS / Collections Department,');
+            if (d.provider) parts.push('');
+            parts.push('I am writing as the borrower to request a compassionate one-time settlement (OTS) for my loan account. I am unable to pay the full outstanding amount due to genuine hardship. I wish to identify myself and my loan, and set out the circumstances for your consideration.');
             parts.push('');
-            parts.push('I am writing to request a compassionate one-time settlement (OTS) for my loan account, in view of genuine hardship and inability to pay the full outstanding amount.');
-            parts.push('');
-            parts.push('To the best of my knowledge, my current outstanding as per your records is Rs ' + os.toLocaleString() + '. I request a settlement at approximately ' + proposedPct + '% of the outstanding, i.e., approximately Rs ' + proposedAmt.toLocaleString() + ', due to the circumstances outlined below.');
+            parts.push('Loan snapshot');
+            parts.push('Current outstanding as per your records: Rs ' + (d.outstanding || 0).toLocaleString() + '.');
+            parts.push('Requested settlement: approximately ' + (d.requestedPct || '') + '% of the outstanding, i.e., approximately Rs ' + (d.requestedAmt || 0).toLocaleString() + '.');
+            parts.push('To the best of my knowledge, these figures are based on available statements and are subject to your confirmation.');
             parts.push('');
 
-            var senior = getChecked('seniorCitizen');
-            var age = getVal('age');
-            if (senior || age) {
-                parts.push('I am a senior citizen (aged ' + (age || '60+') + ' years) and have been facing significant health challenges.');
-                parts.push('');
-            }
-            var hb = getVal('healthBorrower');
-            if (hb) {
-                parts.push('Borrower health: ' + hb);
-                parts.push('');
-            }
-            var hs = getVal('healthSpouse');
-            if (hs) {
-                parts.push('Spouse health: ' + hs);
-                parts.push('');
-            }
-            var mh = getVal('mentalHealth');
-            if (mh) {
-                parts.push('I have also been under mental and emotional stress: ' + mh);
-                parts.push('');
-            }
-            var closed = getChecked('clinicClosed');
-            var cd = getVal('clinicDetails');
-            if (closed || cd) {
-                parts.push('My clinic/practice has been closed. ' + (cd || 'This has resulted in complete loss of professional income.'));
-                parts.push('');
-            }
-            var inc = getVal('incomeStatus');
-            if (inc) {
-                parts.push('Current income situation: ' + inc);
-                parts.push('');
-            }
-            var od = getVal('otherDebts');
-            if (od) {
-                parts.push('I have other major debts and obligations: ' + od);
-                parts.push('');
-            }
-            var since = getVal('emiSince');
-            var paid = getVal('emisPaid');
-            var sp = getVal('sincerePayment');
-            if (since || paid || sp) {
-                parts.push('I have made sincere efforts to pay EMIs regularly. ' + (since ? 'I paid regularly since ' + since + '. ' : '') + (paid ? 'I have paid approximately ' + paid + ' EMIs. ' : '') + (sp ? sp : ''));
-                parts.push('');
-            }
-            var reason = getVal('waiverReason');
-            if (reason) {
-                parts.push('Reason for requesting a larger waiver: ' + reason);
+            var hardshipParts = [];
+            var seniorYes = d.seniorCitizen ? 'Yes' : 'No';
+            if (d.age || d.seniorCitizen) hardshipParts.push('Age: ' + (d.age || '60+') + ' years. Senior citizen: ' + seniorYes + '.');
+            if (d.healthBorrower) hardshipParts.push('Borrower health: ' + d.healthBorrower);
+            if (d.healthSpouse) hardshipParts.push('Spouse health: ' + d.healthSpouse);
+            if (d.mentalHealth) hardshipParts.push('Mental and emotional stress: ' + d.mentalHealth);
+            if (d.clinicClosed || d.clinicDetails) hardshipParts.push('Clinic/practice closure: ' + (d.clinicDetails || 'Closed, resulting in loss of professional income.'));
+            if (d.incomeStatus) hardshipParts.push('Current income situation: ' + d.incomeStatus);
+            if (d.otherDebts) hardshipParts.push('Other major debts: ' + d.otherDebts);
+            if (hardshipParts.length > 0) {
+                parts.push('Hardship details');
+                hardshipParts.forEach(function(p) { parts.push(p); });
                 parts.push('');
             }
 
-            var docList = [];
-            CHECKLIST_CATS.forEach(function(c) {
-                if (getChecked('chk_' + c.id)) docList.push(c.title);
-            });
-            if (docList.length > 0) {
-                parts.push('I am attaching the following supporting documents: ' + docList.join('; ') + '.');
+            var payParts = [];
+            if (d.emiSince) payParts.push('Regular payments since ' + d.emiSince + '.');
+            if (d.emisPaid) payParts.push('Approximately ' + d.emisPaid + ' EMIs paid.');
+            if (d.sincerePayment) payParts.push(d.sincerePayment);
+            if (payParts.length > 0) {
+                parts.push('Past payment behaviour');
+                parts.push('I have made sincere efforts to pay EMIs regularly. The default arose from unavoidable hardship, not from any intention to evade payment.');
+                payParts.forEach(function(p) { parts.push(p); });
                 parts.push('');
             }
 
-            parts.push('I request the bank to kindly consider a compassionate, one-time settlement with the waiver I have proposed. I would be grateful if you could confirm in writing the approved OTS amount, conditions, and payment timeline.');
+            parts.push('Request for waiver / OTS');
+            parts.push('Due to my age, medical conditions, lack of regular income, and other debts, I am unable to clear the full dues. I am requesting a larger waiver and a compassionate one-time settlement.');
+            if (d.waiverReason) parts.push(d.waiverReason);
             parts.push('');
-            parts.push('Subject to your confirmation, the figures above are as per the attached records.');
+
+            var docSentences = [];
+            var hasPerLoanBankDocs = d.loanBankDocsChecked && d.loanBankDocsChecked.length > 0;
+            if (hasPerLoanBankDocs) {
+                docSentences.push('In support of my hardship, I am enclosing, as applicable, bank documents such as welcome/sanction letters, RPS, SOA, interest certificate, EMI bank proofs, and past payment statements for this loan. These documents illustrate the extent of my medical and financial hardship, subject to your verification and confirmation.');
+            }
+            var hasHealthBorrower = d.healthBorrowerChecked && d.healthBorrowerChecked.length > 0;
+            if (hasHealthBorrower) {
+                docSentences.push('I am under regular treatment for serious health conditions, and I am enclosing specialist prescriptions, lab reports, hospital/discharge summaries, and related medical bills, as applicable.');
+            }
+            var hasHealthSpouse = d.healthSpouseChecked && d.healthSpouseChecked.length > 0;
+            if (hasHealthSpouse) {
+                docSentences.push('My spouse is also suffering from significant medical issues, and I am enclosing relevant prescriptions, reports, and hospital documents to show the combined burden on our family.');
+            }
+            var hasHealthMental = d.healthMentalChecked && d.healthMentalChecked.length > 0;
+            if (hasHealthMental) {
+                docSentences.push('In addition, I have required mental health treatment, and I am enclosing certificates or prescriptions from my treating psychiatrist/psychologist, where available.');
+            }
+            var hasHealthIncome = d.healthIncomeChecked && d.healthIncomeChecked.length > 0;
+            if (hasHealthIncome) {
+                docSentences.push('To demonstrate how these illnesses have affected my repayment capacity, I am enclosing bank statements and letters showing reduced or no income due to medical reasons.');
+            }
+            var hasOtherDebtsDocs = d.otherDebtsChecked && d.otherDebtsChecked.length > 0;
+            if (hasOtherDebtsDocs) {
+                docSentences.push('I am also enclosing documents relating to other debts and obligations, including home loan statements, supplier and lab dues, staff salary arrears, government dues, legal notices, and clinic closure / premises NOC, to show my overall financial stress.');
+            }
+            if (docSentences.length > 0) {
+                parts.push('Documents');
+                docSentences.forEach(function(s) { parts.push(s); });
+                parts.push('');
+            }
+
+            parts.push('Closing and confirmation');
+            parts.push('I request the bank to confirm in writing the approved OTS amount, percentage of waiver, conditions, and payment timeline. All figures are subject to bank reconciliation.');
             parts.push('');
             parts.push('Thank you for your time and consideration.');
             parts.push('');
             parts.push('Yours faithfully,');
-            parts.push(borrower);
-            parts.push('Account Reference: ' + (selectedLoan.account || '—'));
-
+            parts.push(d.borrower || 'Borrower');
+            parts.push('Account Reference: ' + (d.account || '—'));
+            parts.push('');
+            parts.push('Phone:');
+            parts.push('Email:');
+            parts.push('Address:');
             return parts.join('\n');
         }
 
+        function generateEmail() {
+            var d = collectCaseDataForEmail();
+            return { subject: buildOtsEmailSubject(d), body: buildOtsEmailBody(d) };
+        }
+
+        function parseCSVLine(line) {
+            var result = [];
+            var i = 0;
+            while (i < line.length) {
+                var c = line[i];
+                if (c === '"') {
+                    i++;
+                    var val = '';
+                    while (i < line.length) {
+                        if (line[i] === '"' && line[i + 1] === '"') { val += '"'; i += 2; continue; }
+                        if (line[i] === '"') { i++; break; }
+                        val += line[i++];
+                    }
+                    result.push(val.trim());
+                    if (line[i] === ',') i++;
+                } else {
+                    var val = '';
+                    while (i < line.length && line[i] !== ',') val += line[i++];
+                    result.push(val.trim());
+                    if (line[i] === ',') i++;
+                }
+            }
+            return result;
+        }
+
+        function parseCSVToLoans(text) {
+            var lines = text.split(/\r?\n/).filter(function(l) { return l.trim(); });
+            if (lines.length < 2) return [];
+            var headers = parseCSVLine(lines[0]).map(function(h) { return h.toLowerCase().replace(/"/g, ''); });
+            var loans = [];
+            for (var i = 1; i < lines.length; i++) {
+                var vals = parseCSVLine(lines[i]);
+                var row = {};
+                headers.forEach(function(h, j) { row[h] = vals[j] || ''; });
+                var provider = (row.lendername || row.loanname || row.provider || '').trim() || 'Unknown';
+                var os = parseFloat(row.outstanding || row.os || 0) || 0;
+                var emi = parseFloat(row.emi || 0) || 0;
+                var pct = parseFloat(row.otspercent || row.ots_percent || row.otspct || 70) || 70;
+                var accountRef = (row.accountnumber || row.account_ref || row.account || '').trim();
+                var borrower = (row.borrower || '').trim();
+                if (!provider && !accountRef && os === 0) continue;
+                loans.push({
+                    id: 'imp_' + Date.now() + '_' + i,
+                    lenderName: provider,
+                    os: os,
+                    emi: emi,
+                    otsPercent: Math.max(1, Math.min(100, pct)),
+                    account: accountRef || '—',
+                    borrower: borrower || 'Borrower'
+                });
+            }
+            return loans;
+        }
+
+        function importLoansFromFile(file) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    var text = e.target.result;
+                    var isCSV = /\.csv$/i.test(file.name);
+                    var loansToUse = [];
+                    if (isCSV) {
+                        loansToUse = parseCSVToLoans(text);
+                        if (loansToUse.length === 0) {
+                            alert('No valid loan rows in CSV. Expected: lenderName, outstanding, emi, accountNumber, borrower');
+                            return;
+                        }
+                    } else {
+                        var data = JSON.parse(text);
+                        var arr = Array.isArray(data) ? data : (data.loans || []);
+                        loansToUse = arr.map(function(l) {
+                            return {
+                                id: l.id || 'imp_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+                                lenderName: l.lenderName || l.lender || l.provider,
+                                os: Number(l.os) || Number(l.outstanding) || 0,
+                                emi: Number(l.emi) || 0,
+                                otsPercent: Number(l.otsPercent) || Number(l.ots_percent) || 70,
+                                account: (l.account || l.account_ref || '').trim() || '—',
+                                borrower: (l.borrower || '').trim() || 'Borrower'
+                            };
+                        });
+                    }
+                    sessionLoans = loansToUse;
+                    renderLoanList(sessionLoans);
+                    document.getElementById('importLoansFile').value = '';
+                } catch (err) {
+                    alert('Error reading file: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function buildDocumentsSummaryText(loanBankChecked, healthBorrowerChecked, healthSpouseChecked, healthMentalChecked, healthIncomeChecked, otherDebtsChecked) {
+            var sentences = [];
+            if (loanBankChecked && loanBankChecked.length > 0) {
+                sentences.push('In support of my hardship, I am enclosing, as applicable, bank documents such as welcome/sanction letters, RPS, SOA, interest certificate, EMI bank proofs, and past payment statements for this loan. These documents illustrate the extent of my medical and financial hardship, subject to your verification and confirmation.');
+            }
+            if (healthBorrowerChecked && healthBorrowerChecked.length > 0) {
+                sentences.push('I am under regular treatment for serious health conditions, and I am enclosing specialist prescriptions, lab reports, hospital/discharge summaries, and related medical bills, as applicable.');
+            }
+            if (healthSpouseChecked && healthSpouseChecked.length > 0) {
+                sentences.push('My spouse is also suffering from significant medical issues, and I am enclosing relevant prescriptions, reports, and hospital documents to show the combined burden on our family.');
+            }
+            if (healthMentalChecked && healthMentalChecked.length > 0) {
+                sentences.push('In addition, I have required mental health treatment, and I am enclosing certificates or prescriptions from my treating psychiatrist/psychologist, where available.');
+            }
+            if (healthIncomeChecked && healthIncomeChecked.length > 0) {
+                sentences.push('To demonstrate how these illnesses have affected my repayment capacity, I am enclosing bank statements and letters showing reduced or no income due to medical reasons.');
+            }
+            if (otherDebtsChecked && otherDebtsChecked.length > 0) {
+                sentences.push('I am also enclosing documents relating to other debts and obligations, including home loan statements, supplier and lab dues, staff salary arrears, government dues, legal notices, and clinic closure / premises NOC, to show my overall financial stress.');
+            }
+            return sentences.join(' ');
+        }
+
+        function buildMedicalSummaryText(healthBorrowerChecked, healthSpouseChecked, healthMentalChecked, healthIncomeChecked) {
+            var sentences = [];
+            if (healthBorrowerChecked && healthBorrowerChecked.length > 0) {
+                sentences.push('I am under regular treatment for serious health conditions, and I am enclosing specialist prescriptions, lab reports, hospital/discharge summaries, and related medical bills, as applicable.');
+            }
+            if (healthSpouseChecked && healthSpouseChecked.length > 0) {
+                sentences.push('My spouse is also suffering from significant medical issues, and I am enclosing relevant prescriptions, reports, and hospital documents to show the combined burden on our family.');
+            }
+            if (healthMentalChecked && healthMentalChecked.length > 0) {
+                sentences.push('In addition, I have required mental health treatment, and I am enclosing certificates or prescriptions from my treating psychiatrist/psychologist, where available.');
+            }
+            if (healthIncomeChecked && healthIncomeChecked.length > 0) {
+                sentences.push('To demonstrate how these illnesses have affected my repayment capacity, I am enclosing bank statements and letters showing reduced or no income due to medical reasons.');
+            }
+            return sentences.join(' ');
+        }
+
+        function collectCaseData() {
+            var snap = {};
+            var snapProvider = document.getElementById('snapProvider');
+            var snapBorrower = document.getElementById('snapBorrower');
+            var snapAccount = document.getElementById('snapAccount');
+            var snapOs = document.getElementById('snapOs');
+            var snapEmi = document.getElementById('snapEmi');
+            var snapPct = document.getElementById('snapPct');
+            var snapOtsAmt = document.getElementById('snapOtsAmt');
+            var snapSavings = document.getElementById('snapSavings');
+            if (snapProvider) snap.provider = snapProvider.value || '';
+            if (snapBorrower) snap.borrower = snapBorrower.value || '';
+            if (snapAccount) snap.account = snapAccount.value || '';
+            if (snapOs) snap.outstanding = Number(snapOs.value) || 0;
+            if (snapEmi) snap.emi = Number(snapEmi.value) || 0;
+            if (snapPct) snap.otsPercent = Number(snapPct.value) || 70;
+            if (snapOtsAmt) snap.otsAmount = Number(snapOtsAmt.value) || 0;
+            if (snapSavings) snap.savings = Number(snapSavings.value) || 0;
+            var hardship = {
+                seniorCitizen: getChecked('seniorCitizen'),
+                age: getVal('age'),
+                healthBorrower: getVal('healthBorrower'),
+                healthSpouse: getVal('healthSpouse'),
+                mentalHealth: getVal('mentalHealth'),
+                clinicClosed: getChecked('clinicClosed'),
+                clinicDetails: getVal('clinicDetails'),
+                incomeStatus: getVal('incomeStatus'),
+                otherDebts: getVal('otherDebts'),
+                emiSince: getVal('emiSince'),
+                emisPaid: getVal('emisPaid'),
+                sincerePayment: getVal('sincerePayment'),
+                proposedPct: getVal('proposedPct'),
+                waiverReason: getVal('waiverReason')
+            };
+            var loanChecklist = {};
+            LOAN_BANK_DOCS.forEach(function(c) {
+                loanChecklist[c.id] = getChecked('chk_loan_' + c.id);
+            });
+            var hardshipDocs = {};
+            LOAN_HARDSHIP_DOCS.forEach(function(c) {
+                hardshipDocs[c.id] = false;
+            });
+            HEALTH_ITEMS.forEach(function(c) {
+                hardshipDocs[c.id] = getChecked('chk_health_' + c.id);
+            });
+            var healthBorrowerChecked = HEALTH_ITEMS.filter(function(c) { return c.group === 'borrower' && getChecked('chk_health_' + c.id); });
+            var healthSpouseChecked = HEALTH_ITEMS.filter(function(c) { return c.group === 'spouse' && getChecked('chk_health_' + c.id); });
+            var healthMentalChecked = HEALTH_ITEMS.filter(function(c) { return c.group === 'mental' && getChecked('chk_health_' + c.id); });
+            var healthIncomeChecked = HEALTH_ITEMS.filter(function(c) { return c.group === 'income' && getChecked('chk_health_' + c.id); });
+            hardshipDocs.borrowerHealth = healthBorrowerChecked.length > 0;
+            hardshipDocs.spouseHealth = healthSpouseChecked.length > 0;
+            hardshipDocs.mentalHealth = healthMentalChecked.length > 0;
+            hardshipDocs.noIncomeProofs = healthIncomeChecked.length > 0;
+            hardshipDocs.pastPaymentStatements = false;
+            var otherDebtsGlobalChecklist = {};
+            OTHER_DEBTS_ITEMS.forEach(function(it) {
+                otherDebtsGlobalChecklist[it.id] = getChecked('chk_other_' + it.id);
+            });
+            var loanBankChecked = LOAN_BANK_DOCS.filter(function(c) { return getChecked('chk_loan_' + c.id); }).map(function(c) { return c.title; });
+            var otherDebtsChecked = OTHER_DEBTS_ITEMS.filter(function(it) { return getChecked('chk_other_' + it.id); }).map(function(it) { return it.label; });
+            var documentsSummaryText = buildDocumentsSummaryText(loanBankChecked, healthBorrowerChecked, healthSpouseChecked, healthMentalChecked, healthIncomeChecked, otherDebtsChecked);
+            var medicalSummaryText = buildMedicalSummaryText(healthBorrowerChecked, healthSpouseChecked, healthMentalChecked, healthIncomeChecked);
+            var checklist = [];
+            LOAN_BANK_DOCS.forEach(function(c) {
+                checklist.push({ title: c.title, checked: getChecked('chk_loan_' + c.id), notes: getVal('notes_loan_' + c.id) });
+            });
+            HEALTH_ITEMS.forEach(function(c) {
+                checklist.push({ title: c.title, checked: getChecked('chk_health_' + c.id), notes: getVal('notes_health_' + c.id) });
+            });
+            OTHER_DEBTS_ITEMS.forEach(function(it) {
+                checklist.push({ title: it.label, checked: getChecked('chk_other_' + it.id), notes: getVal('notes_other_' + it.id) });
+            });
+            var emailSubject = document.getElementById('emailSubject') ? document.getElementById('emailSubject').value : '';
+            var emailBody = document.getElementById('emailOutput') ? document.getElementById('emailOutput').value : '';
+            var otsTemplates = {};
+            OTS_TEMPLATES.forEach(function(t) {
+                var el = document.getElementById('tpl_' + t.id);
+                otsTemplates[t.id] = el ? String(el.value || '') : '';
+            });
+            return {
+                exportedAt: new Date().toISOString(),
+                loanSnapshot: snap,
+                hardship: hardship,
+                documentChecklist: checklist,
+                loanChecklist: loanChecklist,
+                otsTemplates: otsTemplates,
+                hardshipDocs: hardshipDocs,
+                otherDebtsGlobalChecklist: otherDebtsGlobalChecklist,
+                documentsSummaryText: documentsSummaryText,
+                medicalSummaryText: medicalSummaryText,
+                emailSubject: emailSubject,
+                emailBody: emailBody,
+                emailDraft: emailBody
+            };
+        }
+
+        function exportAsJSON() {
+            var data = collectCaseData();
+            var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'ots-case-draft-' + new Date().toISOString().slice(0, 10) + '.json';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(function() { document.body.removeChild(a); URL.revokeObjectURL(a.href); }, 100);
+        }
+
+        function exportAsCSV() {
+            var data = collectCaseData();
+            var lines = [];
+            lines.push('Section,Field,Value');
+            lines.push('Loan Snapshot,Provider,' + (data.loanSnapshot.provider || '').replace(/,/g, ';'));
+            lines.push('Loan Snapshot,Borrower,' + (data.loanSnapshot.borrower || '').replace(/,/g, ';'));
+            lines.push('Loan Snapshot,Account,' + (data.loanSnapshot.account || '').replace(/,/g, ';'));
+            lines.push('Loan Snapshot,Outstanding,' + data.loanSnapshot.outstanding);
+            lines.push('Loan Snapshot,EMI,' + data.loanSnapshot.emi);
+            lines.push('Loan Snapshot,OTS Percent,' + data.loanSnapshot.otsPercent);
+            lines.push('Loan Snapshot,OTS Amount,' + data.loanSnapshot.otsAmount);
+            lines.push('Loan Snapshot,Savings,' + data.loanSnapshot.savings);
+            lines.push('Hardship,Senior Citizen,' + (data.hardship.seniorCitizen ? 'Yes' : 'No'));
+            lines.push('Hardship,Age,' + (data.hardship.age || ''));
+            lines.push('Hardship,Health Borrower,' + (data.hardship.healthBorrower || '').replace(/,/g, ';'));
+            lines.push('Hardship,Health Spouse,' + (data.hardship.healthSpouse || '').replace(/,/g, ';'));
+            lines.push('Hardship,Mental Health,' + (data.hardship.mentalHealth || '').replace(/,/g, ';'));
+            lines.push('Hardship,Clinic Closed,' + (data.hardship.clinicClosed ? 'Yes' : 'No'));
+            lines.push('Hardship,Clinic Details,' + (data.hardship.clinicDetails || '').replace(/,/g, ';'));
+            lines.push('Hardship,Income Status,' + (data.hardship.incomeStatus || '').replace(/,/g, ';'));
+            lines.push('Hardship,Other Debts,' + (data.hardship.otherDebts || '').replace(/,/g, ';'));
+            lines.push('Hardship,EMI Since,' + (data.hardship.emiSince || ''));
+            lines.push('Hardship,EMIs Paid,' + (data.hardship.emisPaid || ''));
+            lines.push('Hardship,Sincere Payment,' + (data.hardship.sincerePayment || '').replace(/,/g, ';'));
+            lines.push('Hardship,Proposed Percent,' + (data.hardship.proposedPct || ''));
+            lines.push('Hardship,Waiver Reason,' + (data.hardship.waiverReason || '').replace(/,/g, ';'));
+            if (data.loanChecklist) {
+                Object.keys(data.loanChecklist).forEach(function(k) {
+                    lines.push('Loan Checklist,' + k + ',' + (data.loanChecklist[k] ? 'Yes' : 'No'));
+                });
+            }
+            if (data.hardshipDocs) {
+                Object.keys(data.hardshipDocs).forEach(function(k) {
+                    lines.push('Hardship Docs,' + k + ',' + (data.hardshipDocs[k] ? 'Yes' : 'No'));
+                });
+            }
+            if (data.otherDebtsGlobalChecklist) {
+                Object.keys(data.otherDebtsGlobalChecklist).forEach(function(k) {
+                    lines.push('Other Debts Global,' + k + ',' + (data.otherDebtsGlobalChecklist[k] ? 'Yes' : 'No'));
+                });
+            }
+            if (data.documentsSummaryText) {
+                lines.push('Documents Summary,,');
+                lines.push('"' + (data.documentsSummaryText || '').replace(/"/g, '""').replace(/\n/g, ' ').replace(/\r/g, '') + '"');
+            }
+            if (data.medicalSummaryText) {
+                lines.push('Medical Summary,,');
+                lines.push('"' + (data.medicalSummaryText || '').replace(/"/g, '""').replace(/\n/g, ' ').replace(/\r/g, '') + '"');
+            }
+            if (data.otsTemplates) {
+                Object.keys(data.otsTemplates).forEach(function(k) {
+                    var t = OTS_TEMPLATES.find(function(x) { return x.id === k; });
+                    var label = t ? t.title : k;
+                    var txt = (data.otsTemplates[k] || '').replace(/"/g, '""').replace(/\n/g, ' ').replace(/\r/g, '');
+                    lines.push('OTS Template,' + (label || k).replace(/,/g, ';') + ',');
+                    lines.push('"' + txt + '"');
+                });
+            }
+            data.documentChecklist.forEach(function(c) {
+                lines.push('Checklist,' + (c.title || '').replace(/,/g, ';') + ',' + (c.checked ? 'Yes' : 'No') + ';' + (c.notes || '').replace(/,/g, ';'));
+            });
+            lines.push('Email Subject,,' + (data.emailSubject || '').replace(/,/g, ';'));
+            lines.push('Email Body,,');
+            lines.push('"' + (data.emailBody || data.emailDraft || '').replace(/"/g, '""').replace(/\n/g, ' ').replace(/\r/g, '') + '"');
+            var blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'ots-case-draft-' + new Date().toISOString().slice(0, 10) + '.csv';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(function() { document.body.removeChild(a); URL.revokeObjectURL(a.href); }, 100);
+        }
+
+        function updateDocumentsPreparedBlock() {
+            var block = document.getElementById('documentsPreparedBlock');
+            if (!block) return;
+            var data = collectCaseData();
+            var lines = [];
+            LOAN_BANK_DOCS.forEach(function(c) {
+                var chk = data.loanChecklist && data.loanChecklist[c.id];
+                if (chk) {
+                    var notes = '';
+                    var ci = (data.documentChecklist || []).find(function(x) { return x.title === c.title; });
+                    if (ci && ci.notes) notes = ' – ' + escapeHtml(ci.notes);
+                    lines.push('• ' + escapeHtml(c.title) + notes);
+                }
+            });
+            var healthLines = [];
+            HEALTH_ITEMS.forEach(function(c) {
+                var chk = data.hardshipDocs && data.hardshipDocs[c.id];
+                if (chk) {
+                    var notes = '';
+                    var ci = (data.documentChecklist || []).find(function(x) { return x.title === c.title; });
+                    if (ci && ci.notes) notes = ' – ' + escapeHtml(ci.notes);
+                    healthLines.push('• ' + escapeHtml(c.title) + notes);
+                }
+            });
+            OTHER_DEBTS_ITEMS.forEach(function(it) {
+                var chk = data.otherDebtsGlobalChecklist && data.otherDebtsGlobalChecklist[it.id];
+                if (chk) {
+                    var notes = '';
+                    var ci = (data.documentChecklist || []).find(function(x) { return x.title === it.label; });
+                    if (ci && ci.notes) notes = ' – ' + escapeHtml(ci.notes);
+                    lines.push('• ' + escapeHtml(it.label) + notes);
+                }
+            });
+            if (lines.length === 0 && healthLines.length === 0 && !data.documentsSummaryText) {
+                block.style.display = 'none';
+                block.innerHTML = '';
+                return;
+            }
+            var html = '<h4>Documents Prepared</h4>';
+            if (lines.length > 0) {
+                html += '<div style="margin-bottom:8px;">' + lines.join('<br>') + '</div>';
+            }
+            if (healthLines.length > 0 || data.medicalSummaryText) {
+                html += '<div style="margin-top:10px;"><strong>Medical Hardship Evidence</strong></div>';
+                if (healthLines.length > 0) {
+                    html += '<div style="margin-bottom:6px;">' + healthLines.join('<br>') + '</div>';
+                }
+                if (data.medicalSummaryText) {
+                    html += '<div style="margin-top:6px;"><strong>Summary:</strong> ' + escapeHtml(data.medicalSummaryText) + '</div>';
+                }
+            }
+            if (data.documentsSummaryText) {
+                html += '<div style="margin-top:8px;"><strong>Documents Summary:</strong> ' + escapeHtml(data.documentsSummaryText) + '</div>';
+            }
+            block.innerHTML = html;
+            block.style.display = 'block';
+        }
+
+        function exportAsPDF() {
+            if (typeof html2pdf === 'undefined') {
+                alert('PDF library loading... Please try again in a moment.');
+                return;
+            }
+            updateDocumentsPreparedBlock();
+            var el = document.getElementById('caseBuilderPanel');
+            if (!el) return;
+            var opt = {
+                margin: 10,
+                filename: 'ots-case-draft-' + new Date().toISOString().slice(0, 10) + '.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            html2pdf().set(opt).from(el).save();
+        }
+
         function init() {
-            var loans = loadLoans();
-            renderLoanList(loans);
+            sessionLoans = loadLoans();
+            renderLoanList(sessionLoans);
+
+            document.getElementById('btnImportLoans').addEventListener('click', function() {
+                document.getElementById('importLoansFile').click();
+            });
+            document.getElementById('importLoansFile').addEventListener('change', function() {
+                var f = this.files[0];
+                if (f) importLoansFromFile(f);
+            });
 
             var btnGen = document.getElementById('btnGenerate');
             if (btnGen) {
                 btnGen.addEventListener('click', function() {
-                    var email = generateEmail();
-                    var out = document.getElementById('emailOutput');
-                    if (out) out.value = email;
+                    var result = generateEmail();
+                    var subjEl = document.getElementById('emailSubject');
+                    var outEl = document.getElementById('emailOutput');
+                    if (subjEl) subjEl.value = result.subject || '';
+                    if (outEl) outEl.value = result.body || '';
+                    updateDocumentsPreparedBlock();
+                });
+            }
+
+            var btnCopySubject = document.getElementById('btnCopySubject');
+            if (btnCopySubject) {
+                btnCopySubject.addEventListener('click', function() {
+                    var el = document.getElementById('emailSubject');
+                    if (!el || !el.value) return;
+                    try {
+                        navigator.clipboard.writeText(el.value).then(function() {
+                            var ok = document.getElementById('copySuccess');
+                            if (ok) { ok.textContent = 'Subject copied!'; ok.style.display = 'block'; setTimeout(function() { ok.style.display = 'none'; ok.textContent = 'Email text copied! Paste into your email client.'; }, 2000); }
+                        });
+                    } catch (e) { }
                 });
             }
 
@@ -483,15 +1324,35 @@
                     try {
                         navigator.clipboard.writeText(out.value).then(function() {
                             var ok = document.getElementById('copySuccess');
-                            if (ok) { ok.style.display = 'block'; setTimeout(function() { ok.style.display = 'none'; }, 3000); }
+                            if (ok) { ok.textContent = 'Email text copied! Paste into your email client.'; ok.style.display = 'block'; setTimeout(function() { ok.style.display = 'none'; }, 3000); }
                         });
                     } catch (e) { }
                 });
             }
+
+            var btnGenEvidence = document.getElementById('btnGenerateEvidence');
+            if (btnGenEvidence) {
+                btnGenEvidence.addEventListener('click', function() {
+                    var inp = document.getElementById('evidenceFilenames');
+                    var out = document.getElementById('evidenceParagraph');
+                    if (!inp || !out) return;
+                    var filenames = parseEvidenceFilenames(inp.value);
+                    out.value = generateEvidenceParagraph(filenames);
+                });
+            }
+            var btnInsertEvidence = document.getElementById('btnInsertEvidence');
+            if (btnInsertEvidence) {
+                btnInsertEvidence.addEventListener('click', insertEvidenceIntoEmail);
+            }
+
+            document.getElementById('btnExportJSON').addEventListener('click', exportAsJSON);
+            document.getElementById('btnExportCSV').addEventListener('click', exportAsCSV);
+            document.getElementById('btnExportPDF').addEventListener('click', exportAsPDF);
         }
 
         init();
     })();
     </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </body>
 </html>

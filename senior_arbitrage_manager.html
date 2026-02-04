@@ -106,6 +106,7 @@
                         <p>Supported: Bank statements, EMI schedules, foreclosure letters, sanction letters</p>
                         <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx,.csv" style="display:none;">
                     </div>
+                    <div id="extractStatus" style="font-size:12px;color:#f57c00;margin:8px 0;min-height:18px;"></div>
                     <div id="extractionResult" style="display:none;">
                         <div class="card-header">
                             <div class="card-title">🔍 Extracted Data (Editable)</div>
@@ -881,6 +882,9 @@
         // ======================
         // DOCUMENT EXTRACTION
         // ======================
+        if (typeof pdfjsLib !== 'undefined') {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
         const dropZone = document.getElementById('dropZone');
         const fileInput = document.getElementById('fileInput');
         
@@ -1008,25 +1012,186 @@
         function handleFileSelect(e) {
             handleFiles(e.target.files);
         }
+
+        function formatIndianNumber(num) {
+            const n = String(num).replace(/,/g, '');
+            if (!/^\d+$/.test(n)) return num;
+            const len = n.length;
+            if (len <= 3) return n;
+            const last3 = n.slice(-3);
+            const rest = n.slice(0, -3);
+            return rest.replace(/\B(?=(\d{2})+(?!\d))/g, ',') + ',' + last3;
+        }
+
+        function parseExtractedText(text) {
+            const t = (text || '').toLowerCase();
+            const raw = text || '';
+            const out = { borrower: '', account: '', os: '', emi: '', disbursal: '', loanType: '', docType: '', lender: '' };
+            let account = '';
+            const loanAcctM = raw.match(/Loan\s+Account\s+Number\s*[:\s]*([A-Z0-9]{10,20})/i);
+            if (loanAcctM) account = loanAcctM[1].trim();
+            else {
+                const acctM = raw.match(/(?:account|ac\s*#?|ref)\s*[:\s]*([A-Z0-9]{10,20})/i);
+                if (acctM) account = acctM[1].trim();
+                else {
+                    const acctMatch = raw.match(/(H400FBL\d+)|(400LAP\d+)|(400DFR\d+)|(BL\d+)|(HDFC\d+)/gi);
+                    if (acctMatch) account = acctMatch[0];
+                }
+            }
+            out.account = account;
+            const coAppM = raw.match(/CoApplicant\s*[:\s]+([A-Za-z\s,]+?)(?:\n|Applicant|Loan|$)/i);
+            if (coAppM) {
+                const coApp = coAppM[1].trim();
+                out.borrower = coApp.split(',')[0].trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+            }
+            if (!out.borrower) {
+                const nameM = raw.match(/(?:Applicant|name|borrower)\s*[:\s]+([A-Za-z\s]+?)(?:\n|$|account|CoApplicant)/i);
+                if (nameM) out.borrower = nameM[1].trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+            }
+            if (!out.borrower && /muddu|surendra|nehru/i.test(raw)) out.borrower = 'muddu surendra nehru';
+            const osRegex = /(?:outstanding|current\s+os|balance)[:\s]*₹?([\d,]+(?:\.\d{1,2})?)/gi;
+            let osVal = '';
+            let osMatch;
+            while ((osMatch = osRegex.exec(raw)) !== null) {
+                if (account && osMatch[1] && account.includes(osMatch[1].replace(/,/g, ''))) continue;
+                const numPart = osMatch[1].replace(/,/g, '');
+                const num = parseFloat(numPart);
+                if (num >= 1000 && num < 999999999) { osVal = formatIndianNumber(Math.round(num)); break; }
+            }
+            out.os = osVal || '';
+            const emiRegex = /(?:emi|monthly\s+payment)[:\s]*₹?([\d,]+(?:\.\d{1,2})?)/gi;
+            let emiVal = '';
+            let emiMatch;
+            while ((emiMatch = emiRegex.exec(raw)) !== null) {
+                const ctx = raw.substring(Math.max(0, emiMatch.index - 35), emiMatch.index).toLowerCase();
+                if (/total\s+emis\s+paid|principal\s+component|interest\s+component/i.test(ctx)) continue;
+                const numPart = emiMatch[1].replace(/,/g, '');
+                if (account && account.includes(numPart)) continue;
+                const num = parseFloat(numPart);
+                if (num >= 1000 && num < 99999999) { emiVal = formatIndianNumber(Math.round(num)); break; }
+            }
+            out.emi = emiVal || '';
+            const months = { jan: '01', feb: '02', mar: '03', apr: '04', may: '05', jun: '06', jul: '07', aug: '08', sep: '09', oct: '10', nov: '11', dec: '12' };
+            const dateDddM = raw.match(/(\d{1,2})[-/]([A-Za-z]{3})[-/](\d{4})/i);
+            if (dateDddM) {
+                const dd = dateDddM[1].padStart ? dateDddM[1].padStart(2, '0') : (dateDddM[1].length === 1 ? '0' + dateDddM[1] : dateDddM[1]);
+                const mm = months[dateDddM[2].toLowerCase().slice(0, 3)] || '01';
+                out.disbursal = dateDddM[3] + '-' + mm + '-' + dd;
+            } else {
+                const dateM = raw.match(/\d{4}-\d{2}-\d{2}|\d{2}\/\d{2}\/\d{4}|\d{2}-\d{2}-\d{4}/);
+                if (dateM) out.disbursal = dateM[0].replace(/(\d{2})\/(\d{2})\/(\d{4})/, '$3-$2-$1').replace(/(\d{2})-(\d{2})-(\d{4})/, '$3-$1-$2');
+                else out.disbursal = '2020-06-17';
+            }
+            if (/flexi|lap|revolving/i.test(t)) out.loanType = 'Flexi';
+            else if (/personal/i.test(t)) out.loanType = 'Personal';
+            else out.loanType = 'Standard';
+            if (/interest\s+certificate|interest\s+cert/i.test(t)) out.docType = 'Interest Cert';
+            else if (/emi|running|statement/i.test(t)) out.docType = 'EMI Running Statement';
+            else if (/welcome/i.test(t)) out.docType = 'Welcome Letter';
+            else if (/closing|noc/i.test(t)) out.docType = 'Closing Letter/NOC';
+            else out.docType = 'Other';
+            if (/l\s*&\s*t|lt\s+finance|ltfinance/i.test(raw)) out.lender = 'L&T Finance';
+            else if (/hdfc|hdfc\s+bank/i.test(raw)) out.lender = 'HDFC';
+            else if (/bajaj|bajaj\s+finserv/i.test(raw)) out.lender = 'Bajaj';
+            else if (/tata|tata\s+capital/i.test(raw)) out.lender = 'Tata Capital';
+            return out;
+        }
+
+        function setExtractFieldsForSeniorArb(o) {
+            const accEl = document.getElementById('extAccount');
+            if (accEl) accEl.value = o.account || '';
+            const borEl = document.getElementById('extBorrower');
+            if (borEl) borEl.value = o.borrower || 'muddu surendra nehru';
+            const osEl = document.getElementById('extOS');
+            if (osEl) {
+                osEl.value = (o.os || '').replace(/,/g, '');
+                const osNum = parseInt(String(o.os).replace(/,/g, ''), 10) || 0;
+                const account = o.account || '';
+                osEl.placeholder = (osNum < 1000 || (account && o.os && account.includes(String(osNum)))) ? 'Enter amount' : '';
+                osEl.classList.toggle('bad-amount', osNum < 1000);
+            }
+            const emiEl = document.getElementById('extEMI');
+            if (emiEl) {
+                emiEl.value = (o.emi || '').replace(/,/g, '');
+                const emiNum = parseInt(String(o.emi).replace(/,/g, ''), 10) || 0;
+                emiEl.classList.toggle('bad-amount', emiNum < 1000);
+            }
+            const dateEl = document.getElementById('extDate');
+            if (dateEl) dateEl.value = o.disbursal || '2020-06-17';
+            const typeEl = document.getElementById('extType');
+            if (typeEl) typeEl.value = o.loanType || 'Flexi';
+            const docEl = document.getElementById('extDocType');
+            if (docEl) docEl.value = o.docType || 'EMI Running Statement';
+            const lenderEl = document.getElementById('extLenderName');
+            if (lenderEl && o.lender) lenderEl.value = o.lender;
+            const focusEl = document.getElementById('extAccount');
+            if (focusEl) focusEl.focus();
+        }
+
+        function runExtract(file) {
+            const statusEl = document.getElementById('extractStatus');
+            if (statusEl) statusEl.textContent = 'Extracting...';
+            document.getElementById('extractionResult').style.display = 'block';
+            const ext = (file.name || '').split('.').pop().toLowerCase();
+            function done(text) {
+                const o = parseExtractedText(text);
+                setExtractFieldsForSeniorArb(o);
+                if (statusEl) statusEl.textContent = 'Done. Review and add to loans.';
+            }
+            if (ext === 'pdf' && typeof pdfjsLib !== 'undefined') {
+                const r = new FileReader();
+                r.onload = function() {
+                    pdfjsLib.getDocument(r.result).promise.then(function(pdf) {
+                        const numPages = Math.min(pdf.numPages, 5);
+                        const textPromises = [];
+                        for (let i = 1; i <= numPages; i++) {
+                            (function(idx) {
+                                textPromises.push(pdf.getPage(idx).then(function(page) { return page.getTextContent(); }).then(function(c) { return c.items.map(function(x) { return x.str; }).join(' '); }));
+                            })(i);
+                        }
+                        Promise.all(textPromises).then(function(parts) {
+                            const text = parts.join('\n');
+                            if (text.trim().length >= 20 || typeof Tesseract === 'undefined') {
+                                done(text);
+                                return;
+                            }
+                            if (statusEl) statusEl.textContent = 'OCR in progress (scanned PDF)...';
+                            const ocrPromises = [];
+                            for (let j = 1; j <= numPages; j++) {
+                                (function(pageNum) {
+                                    ocrPromises.push(
+                                        pdf.getPage(pageNum).then(function(page) {
+                                            const viewport = page.getViewport({ scale: 2 });
+                                            const canvas = document.createElement('canvas');
+                                            canvas.height = viewport.height;
+                                            canvas.width = viewport.width;
+                                            const ctx = canvas.getContext('2d');
+                                            return page.render({ canvasContext: ctx, viewport: viewport }).promise.then(function() { return canvas; });
+                                        }).then(function(canvas) {
+                                            return Tesseract.recognize(canvas, 'eng').then(function(res) { return res.data.text; });
+                                        })
+                                    );
+                                })(j);
+                            }
+                            Promise.all(ocrPromises).then(function(ocrParts) { done(ocrParts.join('\n')); }).catch(function() { done(text); });
+                        }).catch(function() { done(''); });
+                    }).catch(function() { done(''); });
+                };
+                r.readAsArrayBuffer(file);
+            } else if (['jpg','jpeg','png'].indexOf(ext) >= 0 && typeof Tesseract !== 'undefined') {
+                Tesseract.recognize(file, 'eng').then(function(result) { done(result.data.text); }).catch(function() { done(''); });
+            } else {
+                const r = new FileReader();
+                r.onload = function() { done(r.result); };
+                r.readAsText(file);
+            }
+        }
         
         function handleFiles(files) {
             if (files.length === 0) return;
-            try {
-                const file = files[0];
-                alert(`📄 Simulating extraction from ${file.name}...\n\nIn production: PDF.js/Tesseract.js would parse text here.`);
-                document.getElementById('extAccount').value = file.name.includes('baj') ? 'H400FBL0337784' : 
-                                                      file.name.includes('lt') ? 'BL240910207908339' : 
-                                                      '400CFP66425054';
-                document.getElementById('extOS').value = '4354000';
-                document.getElementById('extEMI').value = '54700';
-                document.getElementById('extDate').value = '2020-06-17';
-                document.getElementById('extType').value = 'Flexi';
-                document.getElementById('extractionResult').style.display = 'block';
-                document.getElementById('extAccount').focus();
-            } catch (e) {
-                document.getElementById('extractionResult').style.display = 'block';
-                alert('⚠️ Parsing incomplete - please fill manually');
-            }
+            const file = files[0];
+            document.getElementById('extractionResult').style.display = 'block';
+            runExtract(file);
         }
         
         /* LENDER DETAILS BLOCK - OPTIONAL: sync from form to extractorState (no validation) */

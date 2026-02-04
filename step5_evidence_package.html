@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debt Empire — Step 5: Comprehensive Evidence Package</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; color: #333; line-height: 1.5; }
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .header h1 { font-size: 22px; margin-bottom: 6px; }
+        .header .subtitle { font-size: 13px; opacity: 0.9; }
+        .layout {
+            display: flex;
+            min-height: calc(100vh - 120px);
+            gap: 0;
+        }
+        .left-panel {
+            width: 50%;
+            background: white;
+            border-right: 2px solid #e0e0e0;
+            padding: 16px;
+            overflow-y: auto;
+        }
+        .right-panel {
+            width: 50%;
+            background: #fafafa;
+            padding: 16px;
+            overflow-y: auto;
+        }
+        .section-title {
+            font-size: 14px;
+            font-weight: 700;
+            margin: 16px 0 8px 0;
+            color: #1a237e;
+            border-bottom: 2px solid #3949ab;
+            padding-bottom: 4px;
+        }
+        .section-title.money::before { content: "Rs "; }
+        .input-row { margin: 6px 0; }
+        .input-row label { display: block; font-size: 12px; font-weight: 500; margin-bottom: 2px; }
+        .input-row input, .input-row select { width: 100%; padding: 6px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; }
+        .btn {
+            padding: 8px 14px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            background: #3949ab;
+            color: white;
+        }
+        .btn:hover { opacity: 0.9; }
+        .btn-success { background: #2e7d32; }
+        .btn-primary { background: #1565c0; padding: 10px 18px; font-size: 14px; }
+        .ev-item { margin: 8px 0; padding: 8px; background: white; border: 1px solid #e0e0e0; border-radius: 4px; font-size: 12px; }
+        .ev-item .cb-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+        .ev-item .cb-row input[type="checkbox"] { width: auto; }
+        .ev-item .file-row { margin-top: 4px; font-size: 11px; color: #666; }
+        .month-table { width: 100%; font-size: 11px; border-collapse: collapse; }
+        .month-table th, .month-table td { padding: 4px 6px; border: 1px solid #e0e0e0; }
+        .month-table th { background: #e8eaf6; }
+        .action-bar { margin: 20px 0; padding: 16px; background: #e3f2fd; border-radius: 6px; text-align: center; }
+        .action-bar .btn { margin: 0 6px; }
+        .note-small { font-size: 11px; color: #666; margin-top: 6px; font-style: italic; }
+        @media (max-width: 900px) { .layout { flex-direction: column; } .left-panel, .right-panel { width: 100%; } }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Debt Empire — Step 5: Comprehensive Evidence Package</h1>
+        <div class="subtitle">Final OTS Submission Builder — Financial journey, loss summary, and evidence checklist per lender</div>
+    </div>
+
+    <div class="action-bar">
+        <button type="button" class="btn" id="btnImportStep4">Import Hardship Data from Step 4</button>
+        <input type="file" id="loadStep4File" accept=".json" style="display:none">
+        <button type="button" class="btn" id="btnLoadStep4Json">Load Step 4 JSON File</button>
+        <button type="button" class="btn btn-success" id="btnSaveTemplate">Save as Template</button>
+        <button type="button" class="btn" id="btnLoadTemplate">Load Template</button>
+        <input type="file" id="loadTemplateFile" accept=".json" style="display:none">
+        <span id="importStatus" style="margin-left:10px;font-size:12px;"></span>
+    </div>
+
+    <div class="layout">
+        <div class="left-panel">
+            <div class="section-title">1. Rs Investment & Setup (One-time costs)</div>
+            <div class="input-row"><label>Clinic registration & licences (Rs):</label><input type="number" id="inv_registration" min="0" placeholder="0"></div>
+            <div class="input-row"><label>Rent deposit & advance (Rs):</label><input type="number" id="inv_rent" min="0" placeholder="0"></div>
+            <div class="input-row"><label>Equipment & furniture (Rs):</label><input type="number" id="inv_equipment" min="0" placeholder="0"></div>
+            <div class="input-row"><label>Interior & boards/signage (Rs):</label><input type="number" id="inv_signage" min="0" placeholder="0"></div>
+            <div class="input-row"><label>Hospital software & IT (Rs):</label><input type="number" id="inv_software" min="0" placeholder="0"></div>
+            <div class="input-row"><label>Initial medicine stock (Rs):</label><input type="number" id="inv_medicine" min="0" placeholder="0"></div>
+            <div class="input-row"><label><strong>Total Investment (Rs):</strong></label><input type="number" id="inv_total" readonly placeholder="Auto-calculated"></div>
+
+            <div class="section-title">2. Monthly Revenue & Losses</div>
+            <div class="input-row"><button type="button" class="btn" id="btnAddMonth">Add Month</button></div>
+            <table class="month-table" id="monthTable">
+                <thead><tr><th>Month/Year</th><th>Revenue (Rs)</th><th>Expenses (Rs)</th><th>Net P/L</th><th></th></tr></thead>
+                <tbody id="monthTableBody"></tbody>
+                <tfoot><tr><td><strong>Total</strong></td><td id="totRevenue">0</td><td id="totExpenses">0</td><td id="totNet">0</td><td></td></tr></tfoot>
+            </table>
+
+            <div class="section-title">3. Loan Payment History (Current Lender)</div>
+            <div class="input-row"><label>Lender Name:</label><input type="text" id="loan_lender" placeholder="e.g. HDFC, Bajaj Finance"></div>
+            <div class="input-row"><label>Account Number:</label><input type="text" id="loan_account" placeholder="Account ref"></div>
+            <div class="input-row"><label>Loan Amount Original (Rs):</label><input type="number" id="loan_original" min="0" placeholder="0"></div>
+            <div class="input-row"><label>Processing Fees Paid (Rs):</label><input type="number" id="loan_processing" min="0" placeholder="0"></div>
+            <div class="input-row"><label>First EMI Date:</label><input type="text" id="loan_firstEmi" placeholder="e.g. 2020-04"></div>
+            <div class="input-row"><label>EMI Amount (Rs):</label><input type="number" id="loan_emi" min="0" placeholder="0"></div>
+            <div class="input-row"><label>Months Paid:</label><input type="number" id="loan_monthsPaid" min="0" placeholder="0"></div>
+            <div class="input-row"><label>Total Amount Paid (Rs):</label><input type="number" id="loan_totalPaid" readonly placeholder="Auto"></div>
+            <div class="input-row"><label>Outstanding Balance (Rs):</label><input type="number" id="loan_outstanding" min="0" placeholder="0"></div>
+            <div class="input-row"><label>Proposed OTS %:</label><input type="number" id="loan_otsPct" min="1" max="100" placeholder="70"></div>
+            <div class="input-row"><label>OTS Amount (Rs):</label><input type="number" id="loan_otsAmt" readonly placeholder="Auto"></div>
+            <div class="input-row"><label>Savings (Rs):</label><input type="number" id="loan_savings" readonly placeholder="Auto"></div>
+
+            <div class="section-title">4. Tax & Compliance Costs</div>
+            <div class="input-row"><label>IT Returns (FY22-23):</label><input type="checkbox" id="tax_fy22"> Filed <input type="file" id="tax_file22" accept=".pdf,.jpg,.png" style="font-size:11px"></div>
+            <div class="input-row"><label>IT Returns (FY23-24):</label><input type="checkbox" id="tax_fy23"> Filed <input type="file" id="tax_file23" accept=".pdf,.jpg,.png" style="font-size:11px"></div>
+            <div class="input-row"><label>IT Returns (FY24-25):</label><input type="checkbox" id="tax_fy24"> Filed <input type="file" id="tax_file24" accept=".pdf,.jpg,.png" style="font-size:11px"></div>
+            <div class="input-row"><label>GST paid despite zero revenue (Rs):</label><input type="number" id="tax_gst" min="0" placeholder="0"></div>
+            <div class="input-row"><label>Professional tax (Rs):</label><input type="number" id="tax_prof" min="0" placeholder="0"></div>
+            <div class="input-row"><label>Other govt fees (Rs):</label><input type="number" id="tax_other" min="0" placeholder="0"></div>
+
+            <div class="section-title">5. Legal & Court Costs</div>
+            <div class="input-row"><label>Court notice fees (Rs):</label><input type="number" id="legal_notice" min="0" placeholder="0"></div>
+            <div class="input-row"><label>Lawyer consultation fees (Rs):</label><input type="number" id="legal_lawyer" min="0" placeholder="0"></div>
+            <div class="input-row"><label>Court notices/summons:</label><input type="file" id="legal_files" multiple accept=".pdf,.jpg,.png" style="font-size:11px"></div>
+
+            <div class="section-title">6. Family Health Expenses</div>
+            <div class="input-row"><label>Borrower medical costs (Rs):</label><input type="number" id="health_borrower" min="0" placeholder="0"></div>
+            <div class="input-row"><label>Spouse medical costs (Rs):</label><input type="number" id="health_spouse" min="0" placeholder="0"></div>
+            <div class="input-row"><label>Health certificates/bills:</label><input type="file" id="health_files" multiple accept=".pdf,.jpg,.png" style="font-size:11px"></div>
+        </div>
+
+        <div class="right-panel">
+            <div class="section-title">Business Setup & Closure Evidence Checklist</div>
+            <p class="note-small">Check items and select files. Files are listed in export; attach manually when emailing.</p>
+
+            <div class="section-title">Category 1: Business Registration & Licences</div>
+            <div id="ev_cat1"></div>
+
+            <div class="section-title">Category 2: Clinic Infrastructure</div>
+            <div id="ev_cat2"></div>
+
+            <div class="section-title">Category 3: Government Permissions & Taxes</div>
+            <div id="ev_cat3"></div>
+
+            <div class="section-title">Category 4: Marketing & Digital Presence</div>
+            <div id="ev_cat4"></div>
+
+            <div class="section-title">Category 5: Closure Documents</div>
+            <div id="ev_cat5"></div>
+
+            <div class="section-title">Category 6: Hardship Documents</div>
+            <div id="ev_cat6"></div>
+
+            <div class="action-bar" style="margin-top:24px;">
+                <button type="button" class="btn btn-primary" id="btnGenerate">Generate Comprehensive Evidence Package</button>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;justify-content:center;">
+                <button type="button" class="btn btn-success" id="btnExportJSON">Save as JSON</button>
+                <button type="button" class="btn" id="btnExportCSV">Save as CSV</button>
+                <button type="button" class="btn" id="btnExportPDF">Save as PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="pdfContent" style="display:none;padding:20px;max-width:800px;"></div>
+
+    <script>
+    (function() {
+        'use strict';
+        var EVIDENCE_ITEMS = {
+            cat1: [
+                { id: 'clinic_reg', label: 'Clinic registration certificate (DMHO/health dept)' },
+                { id: 'pharmacy_lic', label: 'Pharmacy drug licence' },
+                { id: 'shop_lic', label: 'Shop & Establishment / Trade licence' },
+                { id: 'pan', label: 'Entity PAN card' },
+                { id: 'gst_reg', label: 'GST registration certificate' }
+            ],
+            cat2: [
+                { id: 'rent_lease', label: 'Rent/lease agreement' },
+                { id: 'equipment', label: 'Equipment purchase bills (furniture, medical devices)' },
+                { id: 'signage', label: 'Signage/boards/LED installation bills' },
+                { id: 'software', label: 'Hospital software licence/invoice' },
+                { id: 'interior', label: 'Interior/renovation bills' }
+            ],
+            cat3: [
+                { id: 'pollution', label: 'Pollution clearance / fire safety NOC (if applicable)' },
+                { id: 'it_returns', label: 'IT returns (last 3 years)' },
+                { id: 'gst_receipts', label: 'GST payment receipts' },
+                { id: 'prof_tax', label: 'Professional tax receipts' }
+            ],
+            cat4: [
+                { id: 'digital_mkt', label: 'Digital marketing bills (Google Ads, social media)' },
+                { id: 'print_ads', label: 'Print ads / pamphlets' },
+                { id: 'website', label: 'Website development invoice' }
+            ],
+            cat5: [
+                { id: 'dmho_closure', label: 'DMHO clinic closure request letter (signed)' },
+                { id: 'drug_cancel', label: 'Drug licence cancellation request (signed)' },
+                { id: 'landlord_noc', label: 'Landlord closure certificate / NOC' },
+                { id: 'premises_handover', label: 'Premises handover letter' }
+            ],
+            cat6: [
+                { id: 'staff_salary', label: 'Staff salary dues certificate' },
+                { id: 'pharma_bills', label: 'Pharmacy/distributor overdue bills' },
+                { id: 'lab_vendor', label: 'Lab/vendor dues notices' },
+                { id: 'borrower_health', label: 'Borrower health certificates' },
+                { id: 'spouse_health', label: 'Spouse health certificates' },
+                { id: 'medical_bills', label: 'Medical bills (high expenses)' },
+                { id: 'court_summons', label: 'Court summons / legal notices' }
+            ]
+        };
+
+        function getVal(id) {
+            var el = document.getElementById(id);
+            return el ? String(el.value || '').trim() : '';
+        }
+        function getNum(id) { return parseFloat(getVal(id)) || 0; }
+        function getChecked(id) {
+            var el = document.getElementById(id);
+            return el && el.checked;
+        }
+        function getFileName(inputId) {
+            var el = document.getElementById(inputId);
+            if (!el || !el.files || el.files.length === 0) return '';
+            if (el.files.length === 1) return el.files[0].name || '';
+            return Array.prototype.map.call(el.files, function(f) { return f.name; }).join(', ');
+        }
+
+        function renderEvidenceCategory(catId, containerId) {
+            var items = EVIDENCE_ITEMS[catId] || [];
+            var container = document.getElementById(containerId);
+            if (!container) return;
+            var html = '';
+            items.forEach(function(it) {
+                var fid = 'ev_' + it.id;
+                html += '<div class="ev-item">' +
+                    '<div class="cb-row"><input type="checkbox" id="chk_' + fid + '"><label for="chk_' + fid + '" style="display:inline;">' + it.label + '</label></div>' +
+                    '<div class="file-row">File: <input type="file" id="file_' + fid + '" accept=".pdf,.jpg,.jpeg,.png" style="font-size:11px;max-width:200px;"> <span id="fn_' + fid + '" style="color:#666;"></span></div>' +
+                    '</div>';
+            });
+            container.innerHTML = html;
+            items.forEach(function(it) {
+                var fid = 'ev_' + it.id;
+                var fileEl = document.getElementById('file_' + fid);
+                var fnEl = document.getElementById('fn_' + fid);
+                if (fileEl && fnEl) {
+                    fileEl.addEventListener('change', function() {
+                        fnEl.textContent = fileEl.files && fileEl.files.length ? (fileEl.files.length === 1 ? fileEl.files[0].name : fileEl.files.length + ' files') : '';
+                    });
+                }
+            });
+        }
+
+        function recalcInvestment() {
+            var ids = ['inv_registration','inv_rent','inv_equipment','inv_signage','inv_software','inv_medicine'];
+            var sum = ids.reduce(function(a, id) { return a + getNum(id); }, 0);
+            var el = document.getElementById('inv_total');
+            if (el) el.value = Math.round(sum);
+        }
+        function recalcLoan() {
+            var emi = getNum('loan_emi');
+            var months = getNum('loan_monthsPaid');
+            var os = getNum('loan_outstanding');
+            var pct = getNum('loan_otsPct') || 70;
+            var totalPaid = Math.round(emi * months);
+            var otsAmt = Math.round(os * (pct / 100));
+            var savings = os - otsAmt;
+            var pa = document.getElementById('loan_totalPaid'); if (pa) pa.value = totalPaid;
+            var oa = document.getElementById('loan_otsAmt'); if (oa) oa.value = otsAmt;
+            var sv = document.getElementById('loan_savings'); if (sv) sv.value = Math.round(savings);
+        }
+        function recalcMonths() {
+            var rows = document.querySelectorAll('#monthTableBody tr');
+            var totRev = 0, totExp = 0;
+            rows.forEach(function(tr) {
+                var rev = parseFloat(tr.querySelector('input.rev') && tr.querySelector('input.rev').value) || 0;
+                var exp = parseFloat(tr.querySelector('input.exp') && tr.querySelector('input.exp').value) || 0;
+                totRev += rev; totExp += exp;
+                var net = rev - exp;
+                var netEl = tr.querySelector('.net');
+                if (netEl) netEl.textContent = net.toLocaleString();
+            });
+            var totNet = totRev - totExp;
+            var r = document.getElementById('totRevenue'); if (r) r.textContent = totRev.toLocaleString();
+            var e = document.getElementById('totExpenses'); if (e) e.textContent = totExp.toLocaleString();
+            var n = document.getElementById('totNet'); if (n) n.textContent = totNet.toLocaleString();
+        }
+
+        function addMonthRow() {
+            var tbody = document.getElementById('monthTableBody');
+            if (!tbody) return;
+            var m = tbody.querySelectorAll('tr').length + 1;
+            var tr = document.createElement('tr');
+            tr.innerHTML = '<td><input type="text" placeholder="e.g. Jan-2024" class="month" size="10"></td>' +
+                '<td><input type="number" class="rev" min="0" placeholder="0" size="8"></td>' +
+                '<td><input type="number" class="exp" min="0" placeholder="0" size="8"></td>' +
+                '<td class="net">0</td>' +
+                '<td><button type="button" class="btn" style="padding:2px 6px;font-size:11px;" data-remove>Remove</button></td>';
+            tbody.appendChild(tr);
+            tr.querySelectorAll('input.rev, input.exp').forEach(function(inp) {
+                inp.addEventListener('input', recalcMonths);
+            });
+            tr.querySelector('[data-remove]').addEventListener('click', function() {
+                tr.remove();
+                recalcMonths();
+            });
+            recalcMonths();
+        }
+
+        function collectStep5Data() {
+            var invIds = ['inv_registration','inv_rent','inv_equipment','inv_signage','inv_software','inv_medicine'];
+            var investment = {};
+            invIds.forEach(function(id) {
+                var key = id.replace('inv_','');
+                investment[key] = getNum(id);
+            });
+            investment.total = getNum('inv_total');
+
+            var monthlyData = [];
+            document.querySelectorAll('#monthTableBody tr').forEach(function(tr) {
+                var month = (tr.querySelector('input.month') && tr.querySelector('input.month').value) || '';
+                var rev = parseFloat(tr.querySelector('input.rev') && tr.querySelector('input.rev').value) || 0;
+                var exp = parseFloat(tr.querySelector('input.exp') && tr.querySelector('input.exp').value) || 0;
+                if (month || rev || exp) monthlyData.push({ month: month, revenue: rev, expenses: exp, netProfitLoss: rev - exp });
+            });
+
+            var loanHistory = {
+                lenderName: getVal('loan_lender'),
+                accountNumber: getVal('loan_account'),
+                loanAmountOriginal: getNum('loan_original'),
+                processingFeesPaid: getNum('loan_processing'),
+                firstEmiDate: getVal('loan_firstEmi'),
+                emiAmount: getNum('loan_emi'),
+                monthsPaid: getNum('loan_monthsPaid'),
+                totalAmountPaid: getNum('loan_totalPaid'),
+                outstandingBalance: getNum('loan_outstanding'),
+                proposedOtsPct: getNum('loan_otsPct') || 70,
+                otsAmount: getNum('loan_otsAmt'),
+                savings: getNum('loan_savings')
+            };
+
+            var taxCompliance = {
+                itReturnsFiled: { fy22: getChecked('tax_fy22'), fy23: getChecked('tax_fy23'), fy24: getChecked('tax_fy24') },
+                itReturnsFiles: [getFileName('tax_file22'), getFileName('tax_file23'), getFileName('tax_file24')],
+                gstPaid: getNum('tax_gst'),
+                professionalTax: getNum('tax_prof'),
+                otherGovtFees: getNum('tax_other')
+            };
+
+            var legalCosts = {
+                courtNoticeFees: getNum('legal_notice'),
+                lawyerFees: getNum('legal_lawyer'),
+                courtFiles: getFileName('legal_files')
+            };
+
+            var healthExpenses = {
+                borrowerMedical: getNum('health_borrower'),
+                spouseMedical: getNum('health_spouse'),
+                healthFiles: getFileName('health_files')
+            };
+
+            var evidenceChecklist = {};
+            ['cat1','cat2','cat3','cat4','cat5','cat6'].forEach(function(cat) {
+                (EVIDENCE_ITEMS[cat] || []).forEach(function(it) {
+                    var fid = 'ev_' + it.id;
+                    var chk = getChecked('chk_' + fid);
+                    var fn = getFileName('file_' + fid);
+                    evidenceChecklist[it.id] = { checked: chk, fileName: fn || '' };
+                });
+            });
+
+            return {
+                exportedAt: new Date().toISOString(),
+                lenderName: loanHistory.lenderName,
+                accountNumber: loanHistory.accountNumber,
+                investment: investment,
+                monthlyData: monthlyData,
+                loanHistory: loanHistory,
+                taxCompliance: taxCompliance,
+                legalCosts: legalCosts,
+                healthExpenses: healthExpenses,
+                evidenceChecklist: evidenceChecklist,
+                hardshipFromStep4: window._step4ImportedData || null,
+                emailTemplate: window._step4EmailBody || ''
+            };
+        }
+
+        function importFromStep4() {
+            var data = null;
+            try {
+                var raw = localStorage.getItem('debtEmpireStep4CaseData');
+                if (raw) data = JSON.parse(raw);
+            } catch (e) {}
+            if (!data) {
+                document.getElementById('importStatus').textContent = 'No Step 4 data in localStorage. Use Load Step 4 JSON File.';
+                return;
+            }
+            window._step4ImportedData = data;
+            window._step4EmailBody = data.emailBody || data.emailDraft || '';
+            if (data.loanSnapshot) {
+                var snap = data.loanSnapshot;
+                var le = document.getElementById('loan_lender'); if (le) le.value = snap.provider || '';
+                var ac = document.getElementById('loan_account'); if (ac) ac.value = snap.account || '';
+                var os = document.getElementById('loan_outstanding'); if (os) os.value = snap.outstanding || '';
+                var pc = document.getElementById('loan_otsPct'); if (pc) pc.value = snap.otsPercent || 70;
+                recalcLoan();
+            }
+            document.getElementById('importStatus').textContent = 'Imported from Step 4. Hardship data merged for export.';
+        }
+
+        function loadStep4JsonFile(file) {
+            var r = new FileReader();
+            r.onload = function() {
+                try {
+                    var data = JSON.parse(r.result);
+                    window._step4ImportedData = data;
+                    window._step4EmailBody = data.emailBody || data.emailDraft || '';
+                    if (data.loanSnapshot) {
+                        var snap = data.loanSnapshot;
+                        var le = document.getElementById('loan_lender'); if (le) le.value = snap.provider || '';
+                        var ac = document.getElementById('loan_account'); if (ac) ac.value = snap.account || '';
+                        var os = document.getElementById('loan_outstanding'); if (os) os.value = snap.outstanding || '';
+                        var pc = document.getElementById('loan_otsPct'); if (pc) pc.value = snap.otsPercent || 70;
+                        recalcLoan();
+                    }
+                    document.getElementById('importStatus').textContent = 'Loaded Step 4 JSON.';
+                } catch (e) {
+                    document.getElementById('importStatus').textContent = 'Error: Invalid JSON.';
+                }
+            };
+            r.readAsText(file);
+        }
+
+        function saveTemplate() {
+            var data = collectStep5Data();
+            data._isTemplate = true;
+            var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'step5-template-' + new Date().toISOString().slice(0,10) + '.json';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(function() { document.body.removeChild(a); URL.revokeObjectURL(a.href); }, 100);
+        }
+
+        function loadTemplate(file) {
+            var r = new FileReader();
+            r.onload = function() {
+                try {
+                    var data = JSON.parse(r.result);
+                    if (data.loanHistory) {
+                        var l = data.loanHistory;
+                        var set = function(id, v) { var e = document.getElementById(id); if (e) e.value = v; };
+                        set('loan_lender', l.lenderName);
+                        set('loan_account', l.accountNumber);
+                        set('loan_original', l.loanAmountOriginal);
+                        set('loan_processing', l.processingFeesPaid);
+                        set('loan_firstEmi', l.firstEmiDate);
+                        set('loan_emi', l.emiAmount);
+                        set('loan_monthsPaid', l.monthsPaid);
+                        set('loan_outstanding', l.outstandingBalance);
+                        set('loan_otsPct', l.proposedOtsPct || 70);
+                    }
+                    if (data.investment) {
+                        var inv = data.investment;
+                        ['registration','rent','equipment','signage','software','medicine'].forEach(function(k) {
+                            var e = document.getElementById('inv_' + k);
+                            if (e && inv[k] != null) e.value = inv[k];
+                        });
+                    }
+                    recalcInvestment();
+                    recalcLoan();
+                    document.getElementById('importStatus').textContent = 'Template loaded. Update lender/account for new lender.';
+                } catch (e) {
+                    document.getElementById('importStatus').textContent = 'Error loading template.';
+                }
+            };
+            r.readAsText(file);
+        }
+
+        function exportAsJSON() {
+            var data = collectStep5Data();
+            var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'evidence-package-' + (data.lenderName || 'lender').replace(/\s+/g,'_') + '-' + new Date().toISOString().slice(0,10) + '.json';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(function() { document.body.removeChild(a); URL.revokeObjectURL(a.href); }, 100);
+        }
+
+        function exportAsCSV() {
+            var data = collectStep5Data();
+            var lines = [];
+            lines.push('Section,Field,Value');
+            lines.push('Lender,' + (data.lenderName || '').replace(/,/g,';') + ',' + (data.accountNumber || '').replace(/,/g,';'));
+            lines.push('Investment,Total,' + (data.investment && data.investment.total));
+            if (data.monthlyData) data.monthlyData.forEach(function(m) {
+                lines.push('Monthly,' + (m.month||'').replace(/,/g,';') + ',' + m.revenue + ',' + m.expenses + ',' + (m.netProfitLoss||0));
+            });
+            if (data.loanHistory) {
+                var l = data.loanHistory;
+                lines.push('Loan,Outstanding,' + l.outstandingBalance);
+                lines.push('Loan,OTS Amount,' + l.otsAmount);
+            }
+            if (data.evidenceChecklist) {
+                Object.keys(data.evidenceChecklist).forEach(function(k) {
+                    var v = data.evidenceChecklist[k];
+                    lines.push('Evidence,' + k + ',' + (v.checked?'Yes':'No') + ';' + (v.fileName||'').replace(/,/g,';'));
+                });
+            }
+            var blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'evidence-package-' + new Date().toISOString().slice(0,10) + '.csv';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(function() { document.body.removeChild(a); URL.revokeObjectURL(a.href); }, 100);
+        }
+
+        function buildPdfHtml(data) {
+            var html = '<div style="font-family:Segoe UI,sans-serif;font-size:12px;line-height:1.5;">';
+            html += '<h1 style="text-align:center;margin-bottom:20px;">Comprehensive Hardship & Financial Evidence – ' + (data.lenderName || 'Lender') + '</h1>';
+            html += '<h2>Executive Summary</h2>';
+            var lh = data.loanHistory || {};
+html += '<p>Account: ' + (data.accountNumber || '—') + ' | Outstanding: Rs ' + (lh.outstandingBalance || 0).toLocaleString() + ' | OTS Amount: Rs ' + (lh.otsAmount || 0).toLocaleString() + ' | Savings: Rs ' + (lh.savings || 0).toLocaleString() + '</p>';
+            html += '<h2>Investment & Setup</h2><p>Total Investment: Rs ' + (data.investment && data.investment.total).toLocaleString() + '</p>';
+            html += '<h2>Monthly Revenue & Losses</h2>';
+            html += '<table border="1" cellpadding="4" style="border-collapse:collapse;width:100%;"><tr><th>Month</th><th>Revenue</th><th>Expenses</th><th>Net P/L</th></tr>';
+            (data.monthlyData || []).forEach(function(m) {
+                html += '<tr><td>' + (m.month||'') + '</td><td>' + m.revenue + '</td><td>' + m.expenses + '</td><td>' + (m.netProfitLoss||0) + '</td></tr>';
+            });
+            html += '</table>';
+            html += '<h2>Evidence Checklist</h2><ul>';
+            if (data.evidenceChecklist) {
+                Object.keys(data.evidenceChecklist).forEach(function(k) {
+                    var v = data.evidenceChecklist[k];
+                    if (v.checked) html += '<li>' + k + ' – Attached: ' + (v.fileName || '(file)') + '</li>';
+                });
+            }
+            html += '</ul>';
+            if (data.hardshipFromStep4 && data.emailTemplate) {
+                html += '<h2>Hardship Narrative (from Step 4)</h2><pre style="white-space:pre-wrap;background:#f5f5f5;padding:12px;">' + (data.emailTemplate || '').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</pre>';
+            }
+            html += '</div>';
+            return html;
+        }
+
+        function exportAsPDF() {
+            if (typeof html2pdf === 'undefined') { alert('PDF library loading... Try again.'); return; }
+            var data = collectStep5Data();
+            var content = document.getElementById('pdfContent');
+            content.innerHTML = buildPdfHtml(data);
+            content.style.display = 'block';
+            var opt = { margin: 10, filename: 'evidence-package-' + (data.lenderName||'lender').replace(/\s+/g,'_') + '-' + new Date().toISOString().slice(0,10) + '.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+            html2pdf().set(opt).from(content).save();
+            content.style.display = 'none';
+            content.innerHTML = '';
+        }
+
+        function init() {
+            ['inv_registration','inv_rent','inv_equipment','inv_signage','inv_software','inv_medicine'].forEach(function(id) {
+                var el = document.getElementById(id);
+                if (el) el.addEventListener('input', recalcInvestment);
+            });
+            ['loan_emi','loan_monthsPaid','loan_outstanding','loan_otsPct'].forEach(function(id) {
+                var el = document.getElementById(id);
+                if (el) el.addEventListener('input', recalcLoan);
+            });
+            renderEvidenceCategory('cat1', 'ev_cat1');
+            renderEvidenceCategory('cat2', 'ev_cat2');
+            renderEvidenceCategory('cat3', 'ev_cat3');
+            renderEvidenceCategory('cat4', 'ev_cat4');
+            renderEvidenceCategory('cat5', 'ev_cat5');
+            renderEvidenceCategory('cat6', 'ev_cat6');
+            document.getElementById('btnAddMonth').addEventListener('click', addMonthRow);
+            addMonthRow();
+            document.getElementById('btnImportStep4').addEventListener('click', importFromStep4);
+            document.getElementById('btnLoadStep4Json').addEventListener('click', function() { document.getElementById('loadStep4File').click(); });
+            document.getElementById('loadStep4File').addEventListener('change', function() { var f = this.files[0]; if (f) loadStep4JsonFile(f); this.value = ''; });
+            document.getElementById('btnSaveTemplate').addEventListener('click', saveTemplate);
+            document.getElementById('btnLoadTemplate').addEventListener('click', function() { document.getElementById('loadTemplateFile').click(); });
+            document.getElementById('loadTemplateFile').addEventListener('change', function() { var f = this.files[0]; if (f) loadTemplate(f); this.value = ''; });
+            document.getElementById('btnGenerate').addEventListener('click', function() { collectStep5Data(); document.getElementById('importStatus').textContent = 'Data collected. Use Export buttons below.'; });
+            document.getElementById('btnExportJSON').addEventListener('click', exportAsJSON);
+            document.getElementById('btnExportCSV').addEventListener('click', exportAsCSV);
+            document.getElementById('btnExportPDF').addEventListener('click', exportAsPDF);
+            recalcInvestment();
+            recalcLoan();
+        }
+        init();
+    })();
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</body>
+</html>

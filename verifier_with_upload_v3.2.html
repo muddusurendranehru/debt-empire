@@ -431,9 +431,39 @@
                     var r = new FileReader();
                     r.onload = function() {
                         pdfjsLib.getDocument(r.result).promise.then(function(pdf) {
-                            var promises = [];
-                            for (var i = 1; i <= Math.min(pdf.numPages, 5); i++) promises.push(pdf.getPage(i).then(function(page) { return page.getTextContent(); }).then(function(c) { return c.items.map(function(x) { return x.str; }).join(' '); }));
-                            Promise.all(promises).then(function(parts) { done(parts.join('\n')); }).catch(function() { done(''); });
+                            var numPages = Math.min(pdf.numPages, 5);
+                            var textPromises = [];
+                            for (var i = 1; i <= numPages; i++) {
+                                (function(idx) {
+                                    textPromises.push(pdf.getPage(idx).then(function(page) { return page.getTextContent(); }).then(function(c) { return c.items.map(function(x) { return x.str; }).join(' '); }));
+                                })(i);
+                            }
+                            Promise.all(textPromises).then(function(parts) {
+                                var text = parts.join('\n');
+                                if (text.trim().length >= 20 || typeof Tesseract === 'undefined') {
+                                    done(text);
+                                    return;
+                                }
+                                status.textContent = 'OCR in progress (scanned PDF)...';
+                                var ocrPromises = [];
+                                for (var j = 1; j <= numPages; j++) {
+                                    (function(pageNum) {
+                                        ocrPromises.push(
+                                            pdf.getPage(pageNum).then(function(page) {
+                                                var viewport = page.getViewport({ scale: 2 });
+                                                var canvas = document.createElement('canvas');
+                                                canvas.height = viewport.height;
+                                                canvas.width = viewport.width;
+                                                var ctx = canvas.getContext('2d');
+                                                return page.render({ canvasContext: ctx, viewport: viewport }).promise.then(function() { return canvas; });
+                                            }).then(function(canvas) {
+                                                return Tesseract.recognize(canvas, 'eng').then(function(res) { return res.data.text; });
+                                            })
+                                        );
+                                    })(j);
+                                }
+                                Promise.all(ocrPromises).then(function(ocrParts) { done(ocrParts.join('\n')); }).catch(function() { done(text); });
+                            }).catch(function() { done(''); });
                         }).catch(function() { done(''); });
                     };
                     r.readAsArrayBuffer(file);
