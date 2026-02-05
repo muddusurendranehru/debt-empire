@@ -69,6 +69,9 @@
         .action-bar { margin: 20px 0; padding: 16px; background: #e3f2fd; border-radius: 6px; text-align: center; }
         .action-bar .btn { margin: 0 6px; }
         .note-small { font-size: 11px; color: #666; margin-top: 6px; font-style: italic; }
+        .hardship-suggested-box { margin-top: 12px; padding: 12px; background: #e3f2fd; border-radius: 6px; border: 1px solid #bbdefb; }
+        .hardship-template-label { display: block; margin: 4px 0; padding: 4px 8px; font-size: 11px; color: #1565c0; cursor: pointer; border-radius: 4px; }
+        .hardship-template-label:hover { background: #bbdefb; }
         @media (max-width: 900px) { .layout { flex-direction: column; } .left-panel, .right-panel { width: 100%; } }
     </style>
 </head>
@@ -164,7 +167,7 @@
 
             <div class="section-title">9. Hardship – No Govt Job or Pension</div>
             <p class="note-small">Loss of government job, no pension. Past government and teaching service; income depended only on private practice, which is now closed.</p>
-            <div class="input-row"><label>Narrative about loss of government job and no pension:</label><textarea id="hardshipNoPensionNote" rows="4" placeholder="Example: I previously served in government and teaching posts (Civil Assistant Surgeon / Assistant Professor), but I am no longer in government service and do not receive any government salary or pension. My income depended only on private practice, which is now closed."></textarea></div>
+            <div class="input-row"><label>Narrative about loss of government job and no pension:</label><textarea id="hardshipNoPensionNote" rows="4" placeholder="Example: I previously served in government and teaching posts (Civil Assistant Surgeon / Assistant Professor), but I am no longer in government service and do not receive any government salary or pension. My income depended only on private practice, which is now closed."></textarea><p class="note-small">You may choose and adapt any of the templates from the right-hand box for your hardship narrative.</p></div>
         </div>
 
         <div class="right-panel">
@@ -195,8 +198,16 @@
             <div class="section-title">Category 9: Hardship – Loss of Government Job and No Pension</div>
             <div id="ev_cat9"></div>
 
+            <div class="hardship-suggested-box">
+                <div class="section-title" style="font-size:12px;">Suggested hardship wording (for OTS emails and notes)</div>
+                <div id="hardshipTemplatesList" style="margin-top:8px;"></div>
+                <textarea id="hardshipTemplateDisplay" readonly rows="6" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:4px;font-size:12px;margin-top:8px;background:#fff;resize:vertical;"></textarea>
+                <button type="button" class="btn" id="btnCopyHardshipTemplate" style="margin-top:8px;">Copy text</button>
+            </div>
+
             <div class="action-bar" style="margin-top:24px;">
                 <button type="button" class="btn btn-primary" id="btnGenerate">Generate Comprehensive Evidence Package</button>
+                <span id="generateStatus" style="margin-left:12px;font-size:13px;color:#2e7d32;font-weight:500;"></span>
             </div>
             <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;justify-content:center;">
                 <button type="button" class="btn btn-success" id="btnExportJSON">Save as JSON</button>
@@ -206,11 +217,19 @@
         </div>
     </div>
 
-    <div id="pdfContent" style="display:none;padding:20px;max-width:800px;"></div>
+    <div id="pdfContent" style="position:absolute;left:-9999px;top:0;width:800px;min-height:400px;padding:20px;background:#fff;font-family:Segoe UI,sans-serif;"></div>
 
     <script>
     (function() {
         'use strict';
+        var HARDSHIP_TEMPLATES = [
+            { id: 'no_govt_pension', label: 'Loss of government job and no pension', text: 'Earlier in my career I served in government and teaching posts as a doctor, but I am no longer in government service and do not receive any government salary or pension. My income in recent years depended entirely on my private hospital and clinic practice, which has had to close, causing a severe and continuing reduction in my earnings. Despite selling assets and cutting personal expenses to repay as much as possible, I am currently unable to maintain the original instalment schedule on these loans. I am therefore requesting a reasonable one-time settlement or restructured arrangement so that I can close these obligations in a fair and sustainable manner.' },
+            { id: 'closure_hospital_clinic', label: 'Closure of earlier hospital and current clinic', text: 'I previously managed a fully functional, registered hospital/clinic, which was closed in order to invest in and establish my current clinic. That investment has not produced the expected income, and the clinic has faced sustained operating losses, leading to serious cash-flow constraints. I have used the proceeds from closing the earlier hospital and subsequent income to service my debts to the maximum extent possible. I now seek a fair settlement or restructuring so that these loans can be closed in an orderly and transparent manner.' },
+            { id: 'major_asset_sold', label: 'Major asset sold to repay debts', text: 'To honour my obligations in good faith, I have already sold a major personal/family asset and applied the sale proceeds towards repayment of multiple loans, as reflected in the enclosed sale deed and bank statements. After this one-time sacrifice, I no longer have comparable assets available to liquidate. Even after applying the entire sale consideration, a residual balance remains which I am presently unable to clear under the original terms. I therefore request that the remaining dues be considered for a reasonable one-time settlement or restructured plan aligned with my present repayment capacity.' },
+            { id: 'health_impact', label: 'Health-related impact on earning capacity', text: 'My ability to practice medicine and manage the clinic has been significantly affected by health issues, resulting in reduced working hours and lower professional income. These medical circumstances were not anticipated at the time the loans were taken and have directly affected my capacity to meet instalments on the original schedule. I continue to work within my medical limitations and to prioritise debt repayment from whatever income is available. In view of this genuine and continuing hardship, I am requesting a pragmatic restructuring or one-time settlement that reflects my current earning capacity.' },
+            { id: 'income_collapse', label: 'Collapse in clinical income and operating environment', text: 'Over the past few years there has been a substantial and sustained decline in patient footfall and clinic revenues due to adverse market and regulatory conditions beyond my control. Fixed costs for staff, rent, and compliance have remained high, while receipts from practice have fallen sharply, creating persistent operating losses. I have responded by reducing expenses wherever possible and discontinuing unviable activities, but the income is still insufficient to service the loans on their original terms. I am therefore seeking a realistic restructuring or settlement so that repayments can continue without further defaults.' },
+            { id: 'good_faith_borrower', label: 'Good-faith borrower requesting OTS/restructure', text: 'Since incurring these loans I have consistently acted in good faith by making payments whenever funds were available, selling assets, and cutting personal and business expenses to reduce my liabilities. Despite these efforts, my present income is not adequate to clear the full outstanding amount under the current schedule without jeopardising essential medical practice and family needs. I wish to resolve these accounts respectfully and avoid prolonged litigation by agreeing to a fair, sustainable settlement structure. I therefore request that the lender kindly consider a one-time settlement or restructured repayment plan in line with my documented financial position.' }
+        ];
         var EVIDENCE_ITEMS = {
             cat1: [
                 { id: 'clinic_reg', label: 'Clinic registration certificate (DMHO/health dept)' },
@@ -304,6 +323,25 @@
                     });
                 }
             });
+        }
+
+        function renderHardshipTemplates() {
+            var listEl = document.getElementById('hardshipTemplatesList');
+            var displayEl = document.getElementById('hardshipTemplateDisplay');
+            if (!listEl || !displayEl) return;
+            var html = '';
+            HARDSHIP_TEMPLATES.forEach(function(t) {
+                html += '<button type="button" class="hardship-template-label" data-template-id="' + t.id + '">' + t.label + '</button>';
+            });
+            listEl.innerHTML = html;
+            listEl.querySelectorAll('.hardship-template-label').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var id = btn.getAttribute('data-template-id');
+                    var t = HARDSHIP_TEMPLATES.filter(function(x) { return x.id === id; })[0];
+                    if (t) displayEl.value = t.text;
+                });
+            });
+            if (HARDSHIP_TEMPLATES.length > 0) displayEl.value = HARDSHIP_TEMPLATES[0].text;
         }
 
         function recalcInvestment() {
@@ -739,11 +777,20 @@ html += '<p>Account: ' + (data.accountNumber || '—') + ' | Outstanding: Rs ' +
             var data = collectStep5Data();
             var content = document.getElementById('pdfContent');
             content.innerHTML = buildPdfHtml(data);
-            content.style.display = 'block';
-            var opt = { margin: 10, filename: 'evidence-package-' + (data.lenderName||'lender').replace(/\s+/g,'_') + '-' + new Date().toISOString().slice(0,10) + '.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
-            html2pdf().set(opt).from(content).save();
-            content.style.display = 'none';
-            content.innerHTML = '';
+            var opt = { margin: 10, filename: 'evidence-package-' + (data.lenderName||'lender').replace(/\s+/g,'_') + '-' + new Date().toISOString().slice(0,10) + '.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true, letterRendering: true, logging: false }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+            var doCapture = function() {
+                html2pdf().set(opt).from(content).save().then(function() {
+                    content.innerHTML = '';
+                }).catch(function(err) {
+                    content.innerHTML = '';
+                    alert('PDF export failed. Try Save as JSON or CSV instead. ' + (err && err.message ? err.message : ''));
+                });
+            };
+            requestAnimationFrame(function() {
+                requestAnimationFrame(function() {
+                    setTimeout(doCapture, 150);
+                });
+            });
         }
 
         function init() {
@@ -763,6 +810,13 @@ html += '<p>Account: ' + (data.accountNumber || '—') + ' | Outstanding: Rs ' +
             renderEvidenceCategory('cat6', 'ev_cat6');
             renderEvidenceCategory('cat8', 'ev_cat8');
             renderEvidenceCategory('cat9', 'ev_cat9');
+            renderHardshipTemplates();
+            document.getElementById('btnCopyHardshipTemplate').addEventListener('click', function() {
+                var ta = document.getElementById('hardshipTemplateDisplay');
+                if (ta && navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(ta.value).then(function() { alert('Copied to clipboard.'); }).catch(function() {});
+                }
+            });
             document.getElementById('btnAddMonth').addEventListener('click', addMonthRow);
             addMonthRow();
             document.getElementById('btnAddAssetDebt').addEventListener('click', function() { addAssetDebtRow(); });
@@ -773,7 +827,20 @@ html += '<p>Account: ' + (data.accountNumber || '—') + ' | Outstanding: Rs ' +
             document.getElementById('btnSaveTemplate').addEventListener('click', saveTemplate);
             document.getElementById('btnLoadTemplate').addEventListener('click', function() { document.getElementById('loadTemplateFile').click(); });
             document.getElementById('loadTemplateFile').addEventListener('change', function() { var f = this.files[0]; if (f) loadTemplate(f); this.value = ''; });
-            document.getElementById('btnGenerate').addEventListener('click', function() { collectStep5Data(); document.getElementById('importStatus').textContent = 'Data collected. Use Export buttons below.'; });
+            document.getElementById('btnGenerate').addEventListener('click', function() {
+                try {
+                    collectStep5Data();
+                    var msg = 'Data collected. Use Save as JSON / CSV / PDF below.';
+                    document.getElementById('importStatus').textContent = msg;
+                    var gs = document.getElementById('generateStatus');
+                    if (gs) { gs.textContent = msg; gs.style.color = '#2e7d32'; }
+                } catch (e) {
+                    var err = 'Error: ' + (e && e.message ? e.message : 'Could not collect data');
+                    document.getElementById('importStatus').textContent = err;
+                    var gs = document.getElementById('generateStatus');
+                    if (gs) { gs.textContent = err; gs.style.color = '#c62828'; }
+                }
+            });
             document.getElementById('btnExportJSON').addEventListener('click', exportAsJSON);
             document.getElementById('btnExportCSV').addEventListener('click', exportAsCSV);
             document.getElementById('btnExportPDF').addEventListener('click', exportAsPDF);
