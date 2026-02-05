@@ -4,7 +4,16 @@
 
 ## What We Achieved Today (Session Summary)
 
-**Date: February 4, 2026 — Step 5: Major Asset Sold to Repay Debts**
+**Date: February 4, 2026 — Step 5: Section 8, Category 8, Previous Hospital**
+
+- **Section 8: Old previous hospital management (without failure)** — New left-panel section after Section 7 (Major Asset Sold). Contains description "Evidence of losing clientele and regular income; ran a registered hospital for years before closing to start this clinic" and the "Note about earlier hospital closed for this clinic" textarea (moved from Section 1). Label no longer includes "(optional)".
+- **Category 8: Old previous hospital management (without failure)** — New right-panel category with the "Previous hospital / clinic registration certificate (e.g., Surendra Nehru Hospital, Godavarikhani)" checklist item moved here from Category 1 for visibility. Includes checkbox, file upload, and help text "Use this for old practice registration closed for starting this clinic."
+- **Removed "(optional)"** from the note about earlier hospital closed for this clinic.
+- **Data flow** — `previousPracticeNote` and `prev_hospital_reg` continue in JSON/CSV/PDF exports and template save/load.
+
+---
+
+**Earlier today — Step 5: Major Asset Sold to Repay Debts**
 
 - **Section 7: Major Asset Sold to Repay Debts (step5_evidence_package.html)** — New optional section in the left panel for recording house/land/asset sales used to repay clinic loans. Fields: property description, location, registration details, sale value, sale date, net amount received; textareas for reason for sale and how proceeds were used; dynamic "Debts repaid" table (Lender, Loan account, Amount paid from sale, Closure status: CLOSED/PART-PAID/OTS PENDING) with Add Loan Row; total amount applied to debt (auto-calculated); optional remarks.
 - **Right panel checklist extension** — Two new items under Category 5 (Closure Documents): "Registered sale deed of house / major asset sold to repay debts" and "Bank statement / payment proofs showing loan repayments from sale proceeds" — each with checkbox + file upload.

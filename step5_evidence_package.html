@@ -157,6 +157,14 @@
                 <tfoot><tr><td colspan="2"><strong>Total amount applied to debt (Rs)</strong></td><td colspan="2"><input type="number" id="asset_totalAppliedToDebt" readonly placeholder="0" style="width:100%;"></td><td></td></tr></tfoot>
             </table>
             <div class="input-row"><label>Any other remarks (optional):</label><textarea id="asset_remarks" rows="2" placeholder="Optional"></textarea></div>
+
+            <div class="section-title">8. Old previous hospital management (without failure)</div>
+            <p class="note-small">Evidence of losing clientele and regular income; ran a registered hospital for years before closing to start this clinic.</p>
+            <div class="input-row"><label>Note about earlier hospital closed for this clinic:</label><textarea id="previousPracticeNote" rows="3" placeholder="Previously ran Surendra Nehru Hospital, a registered private hospital in Godavarikhani (DMHO certificate attached), which I closed to invest in HOMA Clinic."></textarea></div>
+
+            <div class="section-title">9. Hardship – No Govt Job or Pension</div>
+            <p class="note-small">Loss of government job, no pension. Past government and teaching service; income depended only on private practice, which is now closed.</p>
+            <div class="input-row"><label>Narrative about loss of government job and no pension:</label><textarea id="hardshipNoPensionNote" rows="4" placeholder="Example: I previously served in government and teaching posts (Civil Assistant Surgeon / Assistant Professor), but I am no longer in government service and do not receive any government salary or pension. My income depended only on private practice, which is now closed."></textarea></div>
         </div>
 
         <div class="right-panel">
@@ -180,6 +188,12 @@
 
             <div class="section-title">Category 6: Hardship Documents</div>
             <div id="ev_cat6"></div>
+
+            <div class="section-title">Category 8: Old previous hospital management (without failure)</div>
+            <div id="ev_cat8"></div>
+
+            <div class="section-title">Category 9: Hardship – Loss of Government Job and No Pension</div>
+            <div id="ev_cat9"></div>
 
             <div class="action-bar" style="margin-top:24px;">
                 <button type="button" class="btn btn-primary" id="btnGenerate">Generate Comprehensive Evidence Package</button>
@@ -239,6 +253,14 @@
                 { id: 'spouse_health', label: 'Spouse health certificates' },
                 { id: 'medical_bills', label: 'Medical bills (high expenses)' },
                 { id: 'court_summons', label: 'Court summons / legal notices' }
+            ],
+            cat8: [
+                { id: 'prev_hospital_reg', label: 'Previous hospital / clinic registration certificate (e.g., Surendra Nehru Hospital, Godavarikhani)', help: 'Use this for old practice registration closed for starting this clinic.' }
+            ],
+            cat9: [
+                { id: 'govt_service_order', label: 'Past government appointment order (Civil Assistant Surgeon, AP Government)' },
+                { id: 'teaching_hospital_cert', label: 'Teaching hospital certificate (Osmania General Hospital / Medical College)' },
+                { id: 'other_govt_service_proof', label: 'Other service/relieving certificates proving no current govt job or pension' }
             ]
         };
 
@@ -268,6 +290,7 @@
                 html += '<div class="ev-item">' +
                     '<div class="cb-row"><input type="checkbox" id="chk_' + fid + '"><label for="chk_' + fid + '" style="display:inline;">' + it.label + '</label></div>' +
                     '<div class="file-row">File: <input type="file" id="file_' + fid + '" accept=".pdf,.jpg,.jpeg,.png" style="font-size:11px;max-width:200px;"> <span id="fn_' + fid + '" style="color:#666;"></span></div>' +
+                    (it.help ? '<div class="note-small">' + it.help + '</div>' : '') +
                     '</div>';
             });
             container.innerHTML = html;
@@ -430,7 +453,7 @@
             };
 
             var evidenceChecklist = {};
-            ['cat1','cat2','cat3','cat4','cat5','cat6'].forEach(function(cat) {
+            ['cat1','cat2','cat3','cat4','cat5','cat6','cat8','cat9'].forEach(function(cat) {
                 (EVIDENCE_ITEMS[cat] || []).forEach(function(it) {
                     var fid = 'ev_' + it.id;
                     var chk = getChecked('chk_' + fid);
@@ -468,6 +491,8 @@
                 exportedAt: new Date().toISOString(),
                 lenderName: loanHistory.lenderName,
                 accountNumber: loanHistory.accountNumber,
+                previousPracticeNote: getVal('previousPracticeNote'),
+                hardshipNoPensionNote: getVal('hardshipNoPensionNote'),
                 investment: investment,
                 monthlyData: monthlyData,
                 loanHistory: loanHistory,
@@ -557,6 +582,14 @@
                         set('loan_outstanding', l.outstandingBalance);
                         set('loan_otsPct', l.proposedOtsPct || 70);
                     }
+                    if (data.previousPracticeNote != null) {
+                        var e = document.getElementById('previousPracticeNote');
+                        if (e) e.value = data.previousPracticeNote || '';
+                    }
+                    if (data.hardshipNoPensionNote != null) {
+                        var e = document.getElementById('hardshipNoPensionNote');
+                        if (e) e.value = data.hardshipNoPensionNote || '';
+                    }
                     if (data.investment) {
                         var inv = data.investment;
                         ['registration','rent','equipment','signage','software','medicine'].forEach(function(k) {
@@ -611,6 +644,8 @@
             var lines = [];
             lines.push('Section,Field,Value');
             lines.push('Lender,' + (data.lenderName || '').replace(/,/g,';') + ',' + (data.accountNumber || '').replace(/,/g,';'));
+            if (data.previousPracticeNote) lines.push('Previous Practice Note,Note,' + (data.previousPracticeNote || '').replace(/,/g,';').replace(/\n/g,' '));
+            if (data.hardshipNoPensionNote) lines.push('Hardship No Pension,Note,' + (data.hardshipNoPensionNote || '').replace(/,/g,';').replace(/\n/g,' '));
             lines.push('Investment,Total,' + (data.investment && data.investment.total));
             if (data.monthlyData) data.monthlyData.forEach(function(m) {
                 lines.push('Monthly,' + (m.month||'').replace(/,/g,';') + ',' + m.revenue + ',' + m.expenses + ',' + (m.netProfitLoss||0));
@@ -670,6 +705,12 @@ html += '<p>Account: ' + (data.accountNumber || '—') + ' | Outstanding: Rs ' +
                 });
             }
             html += '</ul>';
+            if (data.previousPracticeNote) {
+                html += '<h3>Note about earlier hospital closed for this clinic</h3><p>' + (data.previousPracticeNote || '').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>') + '</p>';
+            }
+            if (data.hardshipNoPensionNote) {
+                html += '<h3>Hardship – No Govt Job or Pension</h3><p>' + (data.hardshipNoPensionNote || '').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>') + '</p>';
+            }
             if (data.majorAssetSale && (data.majorAssetSale.propertyDescription || data.majorAssetSale.saleValue || (data.majorAssetSale.debtsRepaid && data.majorAssetSale.debtsRepaid.length))) {
                 var mas = data.majorAssetSale;
                 html += '<h2>Major Asset Sold to Repay Debts</h2>';
@@ -720,6 +761,8 @@ html += '<p>Account: ' + (data.accountNumber || '—') + ' | Outstanding: Rs ' +
             renderEvidenceCategory('cat4', 'ev_cat4');
             renderEvidenceCategory('cat5', 'ev_cat5');
             renderEvidenceCategory('cat6', 'ev_cat6');
+            renderEvidenceCategory('cat8', 'ev_cat8');
+            renderEvidenceCategory('cat9', 'ev_cat9');
             document.getElementById('btnAddMonth').addEventListener('click', addMonthRow);
             addMonthRow();
             document.getElementById('btnAddAssetDebt').addEventListener('click', function() { addAssetDebtRow(); });
