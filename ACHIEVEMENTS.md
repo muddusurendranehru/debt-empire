@@ -4,6 +4,15 @@
 
 ## What We Achieved Today (Session Summary)
 
+**Date: February 4, 2026 — Step 5: Major Asset Sold to Repay Debts**
+
+- **Section 7: Major Asset Sold to Repay Debts (step5_evidence_package.html)** — New optional section in the left panel for recording house/land/asset sales used to repay clinic loans. Fields: property description, location, registration details, sale value, sale date, net amount received; textareas for reason for sale and how proceeds were used; dynamic "Debts repaid" table (Lender, Loan account, Amount paid from sale, Closure status: CLOSED/PART-PAID/OTS PENDING) with Add Loan Row; total amount applied to debt (auto-calculated); optional remarks.
+- **Right panel checklist extension** — Two new items under Category 5 (Closure Documents): "Registered sale deed of house / major asset sold to repay debts" and "Bank statement / payment proofs showing loan repayments from sale proceeds" — each with checkbox + file upload.
+- **Export integration** — JSON, CSV, and PDF exports now include `majorAssetSale` data. CSV adds "Major Asset Sale" section with property/location/registration/sale value/date/total applied + one row per debt. PDF adds "Major Asset Sold to Repay Debts" section with property details, reason, usage note, and debts table.
+- **Template support** — Save as Template / Load Template includes `majorAssetSale` and debts repaid rows for reuse across lenders.
+
+---
+
 - **Print button (🖨️) in Senior Arbitrage Manager** — In the Manager tab, next to each loan’s “Manage” (✏️) button, added a **Print** button. Clicking it opens a new window with **only that loan’s** OTS Settlement Offer (DEBT EMPIRE: OTS SETTLEMENT OFFER, loan name, borrower, account, OS, OTS amount %, savings, RBI footer). No other loans visible in the print output.
 - **STEPS_OPEN_HTML.txt** — Marked `verifier_with_upload_v3.2.html` as **RECOMMENDED (BEST)**. Added a clear **“How to use this web app — after closing and opening your PC”** section with Option A (open file, no server) and Option B (run server + open localhost), plus notes: use same browser, use same “way” (file vs localhost) so data stays, and put URL in the **address bar** not in Google search.
 - **Data clarification** — Explained that loan data is stored per “origin”: opening as **file** vs **http://localhost:8080** are different; use one way consistently so your loans show up.

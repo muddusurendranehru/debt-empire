@@ -44,7 +44,8 @@
         .section-title.money::before { content: "Rs "; }
         .input-row { margin: 6px 0; }
         .input-row label { display: block; font-size: 12px; font-weight: 500; margin-bottom: 2px; }
-        .input-row input, .input-row select { width: 100%; padding: 6px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; }
+        .input-row input, .input-row select, .input-row textarea { width: 100%; padding: 6px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; }
+        .input-row textarea { min-height: 50px; resize: vertical; }
         .btn {
             padding: 8px 14px;
             border: none;
@@ -137,6 +138,25 @@
             <div class="input-row"><label>Borrower medical costs (Rs):</label><input type="number" id="health_borrower" min="0" placeholder="0"></div>
             <div class="input-row"><label>Spouse medical costs (Rs):</label><input type="number" id="health_spouse" min="0" placeholder="0"></div>
             <div class="input-row"><label>Health certificates/bills:</label><input type="file" id="health_files" multiple accept=".pdf,.jpg,.png" style="font-size:11px"></div>
+
+            <!-- Section 7: Major Asset Sale - Add new sections by inserting before this block with same .section-title + .input-row pattern -->
+            <div class="section-title">7. Major Asset Sold to Repay Debts (Optional)</div>
+            <p class="note-small">Use this section when you have sold a house, land, or other big asset and used the money mainly to repay loans related to the clinic.</p>
+            <div class="input-row"><label>Property description:</label><input type="text" id="asset_propertyDesc" placeholder="House No. 2/8, Bahar-B, Sahara States, Mansoorabad"></div>
+            <div class="input-row"><label>Location / address:</label><input type="text" id="asset_address" placeholder="Mansoorabad, Saroornagar, Ranga Reddy, Telangana"></div>
+            <div class="input-row"><label>Document / registration details:</label><input type="text" id="asset_registrationDetails" placeholder="Sale Deed Doc No. 4654/2025, SRO Saroornagar, dated 16-07-2025"></div>
+            <div class="input-row"><label>Sale value (Rs):</label><input type="number" id="asset_saleValue" min="0" placeholder="4980000"></div>
+            <div class="input-row"><label>Date of sale / registration:</label><input type="date" id="asset_saleDate"></div>
+            <div class="input-row"><label>Net amount actually received (Rs, after deductions):</label><input type="number" id="asset_netReceived" min="0" placeholder="Optional"></div>
+            <div class="input-row"><label>Main reason for sale:</label><textarea id="asset_reasonForSale" rows="3" placeholder="Forced sale due to continuous clinic losses and inability to pay EMIs."></textarea></div>
+            <div class="input-row"><label>Short note on how sale proceeds were used:</label><textarea id="asset_usageNote" rows="4" placeholder="Proceeds used mainly to close one Bajaj loan and part-pay another clinic loan; not used for lifestyle."></textarea></div>
+            <div class="input-row"><button type="button" class="btn" id="btnAddAssetDebt">Add Loan Row</button></div>
+            <table class="month-table" id="assetDebtsTable">
+                <thead><tr><th>Lender / creditor</th><th>Loan type / account no.</th><th>Amount paid from sale (Rs)</th><th>Closure status</th><th></th></tr></thead>
+                <tbody id="assetDebtsTableBody"></tbody>
+                <tfoot><tr><td colspan="2"><strong>Total amount applied to debt (Rs)</strong></td><td colspan="2"><input type="number" id="asset_totalAppliedToDebt" readonly placeholder="0" style="width:100%;"></td><td></td></tr></tfoot>
+            </table>
+            <div class="input-row"><label>Any other remarks (optional):</label><textarea id="asset_remarks" rows="2" placeholder="Optional"></textarea></div>
         </div>
 
         <div class="right-panel">
@@ -207,7 +227,9 @@
                 { id: 'dmho_closure', label: 'DMHO clinic closure request letter (signed)' },
                 { id: 'drug_cancel', label: 'Drug licence cancellation request (signed)' },
                 { id: 'landlord_noc', label: 'Landlord closure certificate / NOC' },
-                { id: 'premises_handover', label: 'Premises handover letter' }
+                { id: 'premises_handover', label: 'Premises handover letter' },
+                { id: 'sale_deed', label: 'Registered sale deed of house / major asset sold to repay debts' },
+                { id: 'bank_statement_proofs', label: 'Bank statement / payment proofs showing loan repayments from sale proceeds' }
             ],
             cat6: [
                 { id: 'staff_salary', label: 'Staff salary dues certificate' },
@@ -317,6 +339,44 @@
             recalcMonths();
         }
 
+        function addAssetDebtRow(rowData) {
+            var tbody = document.getElementById('assetDebtsTableBody');
+            if (!tbody) return;
+            var tr = document.createElement('tr');
+            tr.className = 'asset-debt-row';
+            var opts = '<option value="">--</option><option value="CLOSED">CLOSED</option><option value="PART-PAID">PART-PAID</option><option value="OTS PENDING">OTS PENDING</option>';
+            tr.innerHTML = '<td><input type="text" class="asset-lender" placeholder="e.g. Bajaj Finance" style="width:100%;"></td>' +
+                '<td><input type="text" class="asset-loanAccount" placeholder="Account / loan ref" style="width:100%;"></td>' +
+                '<td><input type="number" class="asset-amount" min="0" placeholder="0" style="width:100%;"></td>' +
+                '<td><select class="asset-status" style="width:100%;">' + opts + '</select></td>' +
+                '<td><button type="button" class="btn" style="padding:2px 6px;font-size:11px;" data-remove>Remove</button></td>';
+            tbody.appendChild(tr);
+            if (rowData) {
+                var lender = tr.querySelector('.asset-lender'); if (lender) lender.value = rowData.lender || '';
+                var acct = tr.querySelector('.asset-loanAccount'); if (acct) acct.value = rowData.loanAccount || '';
+                var amt = tr.querySelector('.asset-amount'); if (amt) amt.value = rowData.amountFromSale || '';
+                var st = tr.querySelector('.asset-status'); if (st) st.value = rowData.closureStatus || '';
+            }
+            tr.querySelectorAll('.asset-amount').forEach(function(inp) {
+                inp.addEventListener('input', recalcAssetDebtsTotal);
+            });
+            tr.querySelector('[data-remove]').addEventListener('click', function() {
+                tr.remove();
+                recalcAssetDebtsTotal();
+            });
+            recalcAssetDebtsTotal();
+        }
+
+        function recalcAssetDebtsTotal() {
+            var sum = 0;
+            document.querySelectorAll('#assetDebtsTableBody tr.asset-debt-row').forEach(function(tr) {
+                var inp = tr.querySelector('input.asset-amount');
+                sum += parseFloat(inp && inp.value) || 0;
+            });
+            var el = document.getElementById('asset_totalAppliedToDebt');
+            if (el) el.value = Math.round(sum);
+        }
+
         function collectStep5Data() {
             var invIds = ['inv_registration','inv_rent','inv_equipment','inv_signage','inv_software','inv_medicine'];
             var investment = {};
@@ -379,6 +439,31 @@
                 });
             });
 
+            var debtsRepaid = [];
+            document.querySelectorAll('#assetDebtsTableBody tr.asset-debt-row').forEach(function(tr) {
+                var lender = (tr.querySelector('.asset-lender') && tr.querySelector('.asset-lender').value) || '';
+                var loanAccount = (tr.querySelector('.asset-loanAccount') && tr.querySelector('.asset-loanAccount').value) || '';
+                var amountFromSale = parseFloat(tr.querySelector('.asset-amount') && tr.querySelector('.asset-amount').value) || 0;
+                var closureStatus = (tr.querySelector('.asset-status') && tr.querySelector('.asset-status').value) || '';
+                if (lender || loanAccount || amountFromSale || closureStatus) {
+                    debtsRepaid.push({ lender: lender, loanAccount: loanAccount, amountFromSale: amountFromSale, closureStatus: closureStatus });
+                }
+            });
+
+            var majorAssetSale = {
+                propertyDescription: getVal('asset_propertyDesc'),
+                propertyAddress: getVal('asset_address'),
+                registrationDetails: getVal('asset_registrationDetails'),
+                saleValue: getNum('asset_saleValue'),
+                saleDate: getVal('asset_saleDate'),
+                netAmountReceived: getNum('asset_netReceived'),
+                reasonForSale: getVal('asset_reasonForSale'),
+                usageNote: getVal('asset_usageNote'),
+                debtsRepaid: debtsRepaid,
+                totalAppliedToDebt: getNum('asset_totalAppliedToDebt'),
+                remarks: getVal('asset_remarks')
+            };
+
             return {
                 exportedAt: new Date().toISOString(),
                 lenderName: loanHistory.lenderName,
@@ -389,6 +474,7 @@
                 taxCompliance: taxCompliance,
                 legalCosts: legalCosts,
                 healthExpenses: healthExpenses,
+                majorAssetSale: majorAssetSale,
                 evidenceChecklist: evidenceChecklist,
                 hardshipFromStep4: window._step4ImportedData || null,
                 emailTemplate: window._step4EmailBody || ''
@@ -478,6 +564,27 @@
                             if (e && inv[k] != null) e.value = inv[k];
                         });
                     }
+                    if (data.majorAssetSale) {
+                        var mas = data.majorAssetSale;
+                        var set = function(id, v) { var e = document.getElementById(id); if (e && v != null && v !== '') e.value = v; };
+                        set('asset_propertyDesc', mas.propertyDescription);
+                        set('asset_address', mas.propertyAddress);
+                        set('asset_registrationDetails', mas.registrationDetails);
+                        set('asset_saleValue', mas.saleValue);
+                        set('asset_saleDate', mas.saleDate);
+                        set('asset_netReceived', mas.netAmountReceived);
+                        set('asset_reasonForSale', mas.reasonForSale);
+                        set('asset_usageNote', mas.usageNote);
+                        set('asset_remarks', mas.remarks);
+                        var tbody = document.getElementById('assetDebtsTableBody');
+                        if (tbody && mas.debtsRepaid && mas.debtsRepaid.length) {
+                            tbody.innerHTML = '';
+                            mas.debtsRepaid.forEach(function(r) {
+                                addAssetDebtRow({ lender: r.lender, loanAccount: r.loanAccount, amountFromSale: r.amountFromSale, closureStatus: r.closureStatus });
+                            });
+                        }
+                        recalcAssetDebtsTotal();
+                    }
                     recalcInvestment();
                     recalcLoan();
                     document.getElementById('importStatus').textContent = 'Template loaded. Update lender/account for new lender.';
@@ -512,6 +619,20 @@
                 var l = data.loanHistory;
                 lines.push('Loan,Outstanding,' + l.outstandingBalance);
                 lines.push('Loan,OTS Amount,' + l.otsAmount);
+            }
+            if (data.majorAssetSale) {
+                var mas = data.majorAssetSale;
+                lines.push('Major Asset Sale,Property description,' + (mas.propertyDescription || '').replace(/,/g,';'));
+                lines.push('Major Asset Sale,Location,' + (mas.propertyAddress || '').replace(/,/g,';'));
+                lines.push('Major Asset Sale,Registration details,' + (mas.registrationDetails || '').replace(/,/g,';'));
+                lines.push('Major Asset Sale,Sale value (Rs),' + (mas.saleValue || ''));
+                lines.push('Major Asset Sale,Sale date,' + (mas.saleDate || ''));
+                lines.push('Major Asset Sale,Total applied to debt (Rs),' + (mas.totalAppliedToDebt || ''));
+                if (mas.debtsRepaid && mas.debtsRepaid.length) {
+                    mas.debtsRepaid.forEach(function(r) {
+                        lines.push('Major Asset Sale Debt,' + (r.lender||'').replace(/,/g,';') + ',' + (r.loanAccount||'').replace(/,/g,';') + ',' + (r.amountFromSale||'') + ',' + (r.closureStatus||'').replace(/,/g,';'));
+                    });
+                }
             }
             if (data.evidenceChecklist) {
                 Object.keys(data.evidenceChecklist).forEach(function(k) {
@@ -549,6 +670,22 @@ html += '<p>Account: ' + (data.accountNumber || '—') + ' | Outstanding: Rs ' +
                 });
             }
             html += '</ul>';
+            if (data.majorAssetSale && (data.majorAssetSale.propertyDescription || data.majorAssetSale.saleValue || (data.majorAssetSale.debtsRepaid && data.majorAssetSale.debtsRepaid.length))) {
+                var mas = data.majorAssetSale;
+                html += '<h2>Major Asset Sold to Repay Debts</h2>';
+                html += '<p>' + (mas.propertyDescription || '').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '. ' + (mas.propertyAddress || '').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</p>';
+                if (mas.registrationDetails) html += '<p>Registration: ' + (mas.registrationDetails || '').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</p>';
+                html += '<p>Sale value: Rs ' + (mas.saleValue || 0).toLocaleString() + ' | Sale date: ' + (mas.saleDate || '—') + '</p>';
+                if (mas.reasonForSale) html += '<p><strong>Reason for sale:</strong> ' + (mas.reasonForSale || '').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</p>';
+                if (mas.usageNote) html += '<p><strong>Usage of proceeds:</strong> ' + (mas.usageNote || '').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</p>';
+                if (mas.debtsRepaid && mas.debtsRepaid.length) {
+                    html += '<table border="1" cellpadding="4" style="border-collapse:collapse;width:100%;margin-top:8px;"><tr><th>Lender</th><th>Account</th><th>Amount (Rs)</th><th>Status</th></tr>';
+                    mas.debtsRepaid.forEach(function(r) {
+                        html += '<tr><td>' + (r.lender||'').replace(/</g,'&lt;') + '</td><td>' + (r.loanAccount||'').replace(/</g,'&lt;') + '</td><td>' + (r.amountFromSale||0).toLocaleString() + '</td><td>' + (r.closureStatus||'').replace(/</g,'&lt;') + '</td></tr>';
+                    });
+                    html += '</table>';
+                }
+            }
             if (data.hardshipFromStep4 && data.emailTemplate) {
                 html += '<h2>Hardship Narrative (from Step 4)</h2><pre style="white-space:pre-wrap;background:#f5f5f5;padding:12px;">' + (data.emailTemplate || '').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</pre>';
             }
@@ -585,6 +722,8 @@ html += '<p>Account: ' + (data.accountNumber || '—') + ' | Outstanding: Rs ' +
             renderEvidenceCategory('cat6', 'ev_cat6');
             document.getElementById('btnAddMonth').addEventListener('click', addMonthRow);
             addMonthRow();
+            document.getElementById('btnAddAssetDebt').addEventListener('click', function() { addAssetDebtRow(); });
+            addAssetDebtRow();
             document.getElementById('btnImportStep4').addEventListener('click', importFromStep4);
             document.getElementById('btnLoadStep4Json').addEventListener('click', function() { document.getElementById('loadStep4File').click(); });
             document.getElementById('loadStep4File').addEventListener('change', function() { var f = this.files[0]; if (f) loadStep4JsonFile(f); this.value = ''; });
