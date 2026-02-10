@@ -98,9 +98,17 @@
             <div class="input-row"><label>Rent deposit & advance (Rs):</label><input type="number" id="inv_rent" min="0" placeholder="0"></div>
             <div class="input-row"><label>Equipment & furniture (Rs):</label><input type="number" id="inv_equipment" min="0" placeholder="0"></div>
             <div class="input-row"><label>Interior & boards/signage (Rs):</label><input type="number" id="inv_signage" min="0" placeholder="0"></div>
+            <div class="input-row"><label>Short note on interior work (HOMA Clinic):</label><textarea id="inv_interiorNote" rows="2" placeholder="Complete turnkey interior for HOMA Clinic (ceilings, partitions, pharmacy and lab furniture, reception, electrical and painting) as per attached quotation (approx. Rs. 17.2 lakh)."></textarea></div>
             <div class="input-row"><label>Hospital software & IT (Rs):</label><input type="number" id="inv_software" min="0" placeholder="0"></div>
             <div class="input-row"><label>Initial medicine stock (Rs):</label><input type="number" id="inv_medicine" min="0" placeholder="0"></div>
             <div class="input-row"><label><strong>Total Investment (Rs):</strong></label><input type="number" id="inv_total" readonly placeholder="Auto-calculated"></div>
+            <div class="input-row"><label>Govt Fees &amp; Compliance (Rs):</label><input type="number" id="govtFeesTotal" min="0" placeholder="0"></div>
+
+            <div class="section-title">Running Expenses (Rs totals)</div>
+            <div class="input-row"><label>Electricity/Phone/Internet:</label><input type="number" id="running_electricity" min="0" placeholder="0"></div>
+            <div class="input-row"><label>Advances (equipment/pharma/marketing):</label><input type="number" id="running_advances" min="0" placeholder="0"></div>
+            <div class="input-row"><label>Furniture/Equipment (fans, AC, chairs, stools):</label><input type="number" id="running_equipment" min="0" placeholder="0"></div>
+            <div class="input-row"><label>Note on expenses (receipts attached):</label><textarea id="expensesNote" rows="2" placeholder="Online receipts, cash bills, pharma dues, equipment advances, etc."></textarea></div>
 
             <div class="section-title">2. Monthly Revenue & Losses</div>
             <div class="input-row"><button type="button" class="btn" id="btnAddMonth">Add Month</button></div>
@@ -183,6 +191,9 @@
             <div class="section-title">Category 3: Government Permissions & Taxes</div>
             <div id="ev_cat3"></div>
 
+            <div class="section-title">Running Expenses & Equipment</div>
+            <div id="ev_cat3b"></div>
+
             <div class="section-title">Category 4: Marketing & Digital Presence</div>
             <div id="ev_cat4"></div>
 
@@ -243,13 +254,21 @@
                 { id: 'equipment', label: 'Equipment purchase bills (furniture, medical devices)' },
                 { id: 'signage', label: 'Signage/boards/LED installation bills' },
                 { id: 'software', label: 'Hospital software licence/invoice' },
-                { id: 'interior', label: 'Interior/renovation bills' }
+                { id: 'interior', label: 'Interior/renovation bills' },
+                { id: 'interior_quote', label: 'Interior quotation / bill (HOMA Clinic)', accept: '.pdf,.jpg,.jpeg,.png,.csv', help: 'Example: HOMA Clinic turnkey interior quote around Rs. 17,20,349 (ceilings, partitions, pharmacy/lab/reception furniture, bathroom, electrical, doors, painting). Photos of completed interior can be added later for court/legal pack (not required for OTS emails).' }
             ],
             cat3: [
                 { id: 'pollution', label: 'Pollution clearance / fire safety NOC (if applicable)' },
                 { id: 'it_returns', label: 'IT returns (last 3 years)' },
                 { id: 'gst_receipts', label: 'GST payment receipts' },
-                { id: 'prof_tax', label: 'Professional tax receipts' }
+                { id: 'prof_tax', label: 'Professional tax receipts' },
+                { id: 'govtFeesReceipts', label: 'Govt fees receipts (DMHO, registration, etc.)' }
+            ],
+            cat3b: [
+                { id: 'utilityBills', label: 'Electricity/phone/internet bills' },
+                { id: 'equipmentAdvances', label: 'Equipment advances (fans, AC, chairs, fridge, beds)' },
+                { id: 'pharmaMarketingReceipts', label: 'Pharma/marketing dues and receipts' },
+                { id: 'cashOnlineReceipts', label: 'Cash bills/online receipts' }
             ],
             cat4: [
                 { id: 'digital_mkt', label: 'Digital marketing bills (Google Ads, social media)' },
@@ -306,9 +325,10 @@
             var html = '';
             items.forEach(function(it) {
                 var fid = 'ev_' + it.id;
+                var acceptVal = it.accept || '.pdf,.jpg,.jpeg,.png';
                 html += '<div class="ev-item">' +
                     '<div class="cb-row"><input type="checkbox" id="chk_' + fid + '"><label for="chk_' + fid + '" style="display:inline;">' + it.label + '</label></div>' +
-                    '<div class="file-row">File: <input type="file" id="file_' + fid + '" accept=".pdf,.jpg,.jpeg,.png" style="font-size:11px;max-width:200px;"> <span id="fn_' + fid + '" style="color:#666;"></span></div>' +
+                    '<div class="file-row">File: <input type="file" id="file_' + fid + '" accept="' + acceptVal + '" style="font-size:11px;max-width:200px;"> <span id="fn_' + fid + '" style="color:#666;"></span></div>' +
                     (it.help ? '<div class="note-small">' + it.help + '</div>' : '') +
                     '</div>';
             });
@@ -446,6 +466,14 @@
                 investment[key] = getNum(id);
             });
             investment.total = getNum('inv_total');
+            investment.interiorNote = getVal('inv_interiorNote');
+            investment.govtFeesTotal = getNum('govtFeesTotal');
+            investment.runningExpenses = {
+                electricity: getNum('running_electricity'),
+                advances: getNum('running_advances'),
+                equipment: getNum('running_equipment')
+            };
+            investment.expensesNote = getVal('expensesNote');
 
             var monthlyData = [];
             document.querySelectorAll('#monthTableBody tr').forEach(function(tr) {
@@ -491,7 +519,7 @@
             };
 
             var evidenceChecklist = {};
-            ['cat1','cat2','cat3','cat4','cat5','cat6','cat8','cat9'].forEach(function(cat) {
+            ['cat1','cat2','cat3','cat3b','cat4','cat5','cat6','cat8','cat9'].forEach(function(cat) {
                 (EVIDENCE_ITEMS[cat] || []).forEach(function(it) {
                     var fid = 'ev_' + it.id;
                     var chk = getChecked('chk_' + fid);
@@ -634,6 +662,24 @@
                             var e = document.getElementById('inv_' + k);
                             if (e && inv[k] != null) e.value = inv[k];
                         });
+                        if (inv.interiorNote != null) {
+                            var e = document.getElementById('inv_interiorNote');
+                            if (e) e.value = inv.interiorNote || '';
+                        }
+                        if (inv.govtFeesTotal != null) {
+                            var e = document.getElementById('govtFeesTotal');
+                            if (e) e.value = inv.govtFeesTotal;
+                        }
+                        if (inv.runningExpenses) {
+                            var re = inv.runningExpenses;
+                            var reEl = document.getElementById('running_electricity'); if (reEl && re.electricity != null) reEl.value = re.electricity;
+                            var raEl = document.getElementById('running_advances'); if (raEl && re.advances != null) raEl.value = re.advances;
+                            var rqEl = document.getElementById('running_equipment'); if (rqEl && re.equipment != null) rqEl.value = re.equipment;
+                        }
+                        if (inv.expensesNote != null) {
+                            var e = document.getElementById('expensesNote');
+                            if (e) e.value = inv.expensesNote || '';
+                        }
                     }
                     if (data.majorAssetSale) {
                         var mas = data.majorAssetSale;
@@ -685,6 +731,15 @@
             if (data.previousPracticeNote) lines.push('Previous Practice Note,Note,' + (data.previousPracticeNote || '').replace(/,/g,';').replace(/\n/g,' '));
             if (data.hardshipNoPensionNote) lines.push('Hardship No Pension,Note,' + (data.hardshipNoPensionNote || '').replace(/,/g,';').replace(/\n/g,' '));
             lines.push('Investment,Total,' + (data.investment && data.investment.total));
+            if (data.investment && data.investment.interiorNote) lines.push('Investment,Interior note,' + (data.investment.interiorNote || '').replace(/,/g,';').replace(/\n/g,' '));
+            if (data.investment && data.investment.govtFeesTotal != null) lines.push('Expenses,Govt Fees,' + data.investment.govtFeesTotal);
+            if (data.investment && data.investment.runningExpenses) {
+                var re = data.investment.runningExpenses;
+                if (re.electricity != null) lines.push('Expenses,Utilities,' + re.electricity);
+                if (re.equipment != null) lines.push('Expenses,Equipment Advances,' + re.equipment);
+                if (re.advances != null) lines.push('Expenses,Pharma/Marketing,' + re.advances);
+            }
+            if (data.investment && data.investment.expensesNote) lines.push('Expenses,Cash Receipts note,' + (data.investment.expensesNote || '').replace(/,/g,';').replace(/\n/g,' '));
             if (data.monthlyData) data.monthlyData.forEach(function(m) {
                 lines.push('Monthly,' + (m.month||'').replace(/,/g,';') + ',' + m.revenue + ',' + m.expenses + ',' + (m.netProfitLoss||0));
             });
@@ -728,7 +783,19 @@
             html += '<h2>Executive Summary</h2>';
             var lh = data.loanHistory || {};
 html += '<p>Account: ' + (data.accountNumber || '—') + ' | Outstanding: Rs ' + (lh.outstandingBalance || 0).toLocaleString() + ' | OTS Amount: Rs ' + (lh.otsAmount || 0).toLocaleString() + ' | Savings: Rs ' + (lh.savings || 0).toLocaleString() + '</p>';
-            html += '<h2>Investment & Setup</h2><p>Total Investment: Rs ' + (data.investment && data.investment.total).toLocaleString() + '</p>';
+            html += '<h2>Investment & Setup</h2><p>Total Investment: Rs ' + (data.investment && data.investment.total || 0).toLocaleString();
+            if (data.investment && data.investment.interiorNote) html += ' (Interior: ' + (data.investment.interiorNote || '').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,' ') + ')';
+            html += '</p>';
+            if (data.investment) {
+                var inv = data.investment;
+                if (inv.govtFeesTotal != null && inv.govtFeesTotal > 0) html += '<p>Govt Fees: Rs ' + (inv.govtFeesTotal || 0).toLocaleString() + '</p>';
+                if (inv.runningExpenses) {
+                    var re = inv.runningExpenses;
+                    var runSum = (re.electricity || 0) + (re.advances || 0) + (re.equipment || 0);
+                    if (runSum > 0) html += '<p>Running Expenses: Rs ' + runSum.toLocaleString() + ' (Electricity/Phone/Internet: ' + (re.electricity || 0).toLocaleString() + ', Advances: ' + (re.advances || 0).toLocaleString() + ', Equipment: ' + (re.equipment || 0).toLocaleString() + ')</p>';
+                }
+                if (inv.expensesNote) html += '<p><strong>Expenses note:</strong> ' + (inv.expensesNote || '').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>') + '</p>';
+            }
             html += '<h2>Monthly Revenue & Losses</h2>';
             html += '<table border="1" cellpadding="4" style="border-collapse:collapse;width:100%;"><tr><th>Month</th><th>Revenue</th><th>Expenses</th><th>Net P/L</th></tr>';
             (data.monthlyData || []).forEach(function(m) {
@@ -739,7 +806,8 @@ html += '<p>Account: ' + (data.accountNumber || '—') + ' | Outstanding: Rs ' +
             if (data.evidenceChecklist) {
                 Object.keys(data.evidenceChecklist).forEach(function(k) {
                     var v = data.evidenceChecklist[k];
-                    if (v.checked) html += '<li>' + k + ' – Attached: ' + (v.fileName || '(file)') + '</li>';
+                    var label = (k === 'interior_quote') ? 'Interior quotation/bill' : k;
+                    if (v.checked) html += '<li>' + label + ' – Attached: ' + (v.fileName || '(file)') + '</li>';
                 });
             }
             html += '</ul>';
@@ -805,6 +873,7 @@ html += '<p>Account: ' + (data.accountNumber || '—') + ' | Outstanding: Rs ' +
             renderEvidenceCategory('cat1', 'ev_cat1');
             renderEvidenceCategory('cat2', 'ev_cat2');
             renderEvidenceCategory('cat3', 'ev_cat3');
+            renderEvidenceCategory('cat3b', 'ev_cat3b');
             renderEvidenceCategory('cat4', 'ev_cat4');
             renderEvidenceCategory('cat5', 'ev_cat5');
             renderEvidenceCategory('cat6', 'ev_cat6');
