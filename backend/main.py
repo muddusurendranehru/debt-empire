@@ -2,9 +2,10 @@
 FastAPI Backend - Debt Empire v2.0
 Port: 8000
 Purpose: Parse CSV, generate projections, OTS PDFs
+Now with Database (Neon PostgreSQL) and Authentication
 """
 
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, FileResponse
 from typing import List, Optional
@@ -12,7 +13,19 @@ import uvicorn
 from pathlib import Path
 import json
 from datetime import datetime
+import os
+from dotenv import load_dotenv
 
+# Load environment variables
+load_dotenv()
+
+# Import database and auth
+from database import init_db, get_db
+from database.models import Loan, User
+from middleware import get_current_user
+from routes.auth import router as auth_router
+
+# Import existing empire engine (for backward compatibility)
 from empire import DebtEmpireEngine
 
 app = FastAPI(title="Debt Empire API", version="2.0")
@@ -26,7 +39,28 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize engine
+# Include auth routes
+app.include_router(auth_router)
+
+# Initialize database on startup
+@app.on_event("startup")
+async def startup_event():
+    """Initialize database on application startup."""
+    try:
+        # Test database connection
+        from database.connection import test_connection
+        if test_connection():
+            print("✅ Database connection successful")
+            # Initialize schema
+            init_db()
+            print("✅ Database schema initialized")
+        else:
+            print("⚠️  Database connection failed - check DATABASE_URL")
+    except Exception as e:
+        print(f"⚠️  Database initialization error: {e}")
+        print("   Continuing without database (some features may not work)")
+
+# Initialize engine (for backward compatibility with JSON files)
 engine = DebtEmpireEngine()
 
 # Debt Empire project root (for uploads + masters used by loan_verifier/empire)
@@ -39,26 +73,105 @@ ALLOWED_LOAN_EXT = {".pdf", ".docx", ".xlsx", ".xls", ".jpg", ".jpeg", ".png", "
 @app.get("/")
 async def root():
     """Health check."""
-    return {"status": "ok", "service": "Debt Empire API", "version": "2.0"}
+    return {"status": "ok", "service": "Debt Empire API", "version": "2.0", "database": "enabled"}
 
+
+# ==================== AUTHENTICATED ROUTES ====================
 
 @app.get("/api/masters")
-async def get_masters():
-    """Get masters.json data."""
+async def get_masters(current_user: dict = Depends(get_current_user)):
+    """
+    Get user's loans from database.
+    Protected route - requires authentication.
+    """
     try:
-        masters = engine.load_masters()
-        return JSONResponse(content=masters)
+        user_id = current_user['id']
+        loans = Loan.get_by_user(user_id)
+        
+        # Calculate totals
+        total_outstanding = sum(loan['outstanding'] for loan in loans)
+        total_emi = sum(loan['emi'] for loan in loans)
+        total_ots_liability = sum(loan['ots_amount_70pct'] for loan in loans)
+        total_savings = sum(loan['savings'] for loan in loans)
+        
+        # Format response similar to old masters.json structure
+        response = {
+            'loans': {f"{loan['provider']}_{loan.get('account_ref', loan['id'])}": loan for loan in loans},
+            'total_exposure': total_outstanding,
+            'total_ots_liability': total_ots_liability,
+            'total_savings': total_savings,
+            'total_emi': total_emi,
+            'last_updated': datetime.now().isoformat(),
+            'user_id': user_id
+        }
+        
+        return JSONResponse(content=response)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/loans")
+async def create_loan(
+    provider: str,
+    outstanding: int,
+    emi: int,
+    tenure_months: int,
+    account_ref: Optional[str] = None,
+    start_date: Optional[str] = None,
+    loan_type: str = 'personal',
+    status: str = 'RUNNING_PAID_EMI',
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Create a new loan.
+    Protected route - requires authentication.
+    """
+    try:
+        user_id = current_user['id']
+        loan = Loan.create(
+            user_id=user_id,
+            provider=provider,
+            outstanding=outstanding,
+            emi=emi,
+            tenure_months=tenure_months,
+            account_ref=account_ref,
+            start_date=start_date,
+            loan_type=loan_type,
+            status=status
+        )
+        return JSONResponse(content={"status": "success", "loan": loan})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/loans")
+async def get_loans(current_user: dict = Depends(get_current_user)):
+    """
+    Get all loans for current user.
+    Protected route - requires authentication.
+    """
+    try:
+        user_id = current_user['id']
+        loans = Loan.get_by_user(user_id)
+        return JSONResponse(content={"loans": loans, "count": len(loans)})
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/api/upload-csv")
-async def upload_csv(file: UploadFile = File(...), month_name: Optional[str] = None):
+async def upload_csv(
+    file: UploadFile = File(...),
+    month_name: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
     """
     Upload CSV and validate columns.
     Safety Rule: VALIDATE CSV cols before processing.
+    Protected route - requires authentication.
     """
     try:
+        user_id = current_user['id']
+        
         # Validate file type
         if not file.filename.endswith('.csv'):
             raise HTTPException(status_code=400, detail="File must be CSV")
@@ -91,6 +204,9 @@ async def upload_csv(file: UploadFile = File(...), month_name: Optional[str] = N
         
         result = engine.process_monthly_csv(temp_path, month_name)
         
+        # TODO: Save to database monthly_statements table
+        # For now, keep backward compatibility with JSON files
+        
         return JSONResponse(content={
             "status": "success",
             "month": month_name,
@@ -105,12 +221,19 @@ async def upload_csv(file: UploadFile = File(...), month_name: Optional[str] = N
 
 
 @app.post("/api/process-monthly")
-async def process_monthly(month_name: str, csv_path: Optional[str] = None):
+async def process_monthly(
+    month_name: str,
+    csv_path: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
     """
     Process monthly ritual (8 steps).
     Safety Rule: SLOW - Verify each step.
+    Protected route - requires authentication.
     """
     try:
+        user_id = current_user['id']
+        
         if csv_path:
             csv_path_obj = Path(csv_path)
             if not csv_path_obj.exists():
@@ -139,8 +262,8 @@ async def process_monthly(month_name: str, csv_path: Optional[str] = None):
 
 
 @app.get("/api/projections/{month_name}")
-async def get_projections(month_name: str):
-    """Get projection Excel file."""
+async def get_projections(month_name: str, current_user: dict = Depends(get_current_user)):
+    """Get projection Excel file. Protected route."""
     projection_file = engine.base_dir / "monthly" / f"{month_name}_projection.xlsx"
     
     if not projection_file.exists():
@@ -154,8 +277,8 @@ async def get_projections(month_name: str):
 
 
 @app.get("/api/ots-pdfs")
-async def list_ots_pdfs():
-    """List available OTS PDFs."""
+async def list_ots_pdfs(current_user: dict = Depends(get_current_user)):
+    """List available OTS PDFs. Protected route."""
     ots_dir = engine.base_dir / "ots-pdfs"
     pdfs = [f.name for f in ots_dir.glob("*.pdf")] if ots_dir.exists() else []
     
@@ -163,13 +286,17 @@ async def list_ots_pdfs():
 
 
 @app.post("/api/upload-loan-document")
-async def upload_loan_document(file: UploadFile = File(...)):
+async def upload_loan_document(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user)
+):
     """
     Upload a loan document (PDF/DOCX/JPG/CSV/XLSX) from the HTML verifier.
-    Saves to loans/new_uploads/. If PDF, optionally parses and adds to masters.json.
-    No PowerShell needed: use the HTML drag-drop, then click Parse All / Upload.
+    Saves to loans/new_uploads/. If PDF, optionally parses and adds to database.
+    Protected route - requires authentication.
     """
     try:
+        user_id = current_user['id']
         ext = Path(file.filename or "").suffix.lower()
         if ext not in ALLOWED_LOAN_EXT:
             raise HTTPException(
@@ -196,25 +323,17 @@ async def upload_loan_document(file: UploadFile = File(...)):
                     elif "L&T" in provider or "L&T" in (parsed.get("provider") or ""): provider = "L&T"
                     account_ref = (parsed.get("account_number") or parsed.get("linked_account") or "").strip() or "—"
                     start_date = parsed.get("emi_start_date") or "2024-01-01"
-                    new_loan = {
-                        "provider": provider,
-                        "outstanding": int(os_amt),
-                        "emi": int(emi),
-                        "tenure_months": int(parsed.get("tenure_remaining_months") or (os_amt // emi) or 24),
-                        "ots_amount_70pct": round(os_amt * 0.70),
-                        "savings": int(os_amt - round(os_amt * 0.70)),
-                        "start_date": start_date,
-                        "account_ref": account_ref,
-                    }
-                    with open(MASTERS_JSON, "r", encoding="utf-8") as f:
-                        masters = json.load(f)
-                    masters.setdefault("loans", []).append(new_loan)
-                    masters["total_exposure"] = sum(l.get("outstanding", 0) for l in masters["loans"])
-                    masters["total_ots_liability"] = sum(round(l.get("outstanding", 0) * 0.70) for l in masters["loans"])
-                    masters["total_savings"] = masters["total_exposure"] - masters["total_ots_liability"]
-                    masters["generated_at"] = datetime.now().isoformat()
-                    with open(MASTERS_JSON, "w", encoding="utf-8") as f:
-                        json.dump(masters, f, indent=2, ensure_ascii=False)
+                    
+                    # Create loan in database instead of JSON
+                    new_loan = Loan.create(
+                        user_id=user_id,
+                        provider=provider,
+                        outstanding=int(os_amt),
+                        emi=int(emi),
+                        tenure_months=int(parsed.get("tenure_remaining_months") or (os_amt // emi) or 24),
+                        account_ref=account_ref,
+                        start_date=start_date
+                    )
                     result["parsed"] = True
                     result["loan_added"] = True
                     result["account_ref"] = account_ref
@@ -228,8 +347,8 @@ async def upload_loan_document(file: UploadFile = File(...)):
 
 
 @app.get("/api/ots-pdfs/{filename}")
-async def get_ots_pdf(filename: str):
-    """Download OTS PDF."""
+async def get_ots_pdf(filename: str, current_user: dict = Depends(get_current_user)):
+    """Download OTS PDF. Protected route."""
     pdf_path = engine.base_dir / "ots-pdfs" / filename
     
     if not pdf_path.exists():
@@ -245,5 +364,7 @@ async def get_ots_pdf(filename: str):
 if __name__ == "__main__":
     print("=" * 70)
     print("DEBT EMPIRE API - Starting on http://localhost:8000")
+    print("Database: Neon PostgreSQL")
+    print("Authentication: JWT enabled")
     print("=" * 70)
     uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
