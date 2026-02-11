@@ -73,7 +73,9 @@
         .hardship-template-label { display: block; margin: 4px 0; padding: 4px 8px; font-size: 11px; color: #1565c0; cursor: pointer; border-radius: 4px; }
         .hardship-template-label:hover { background: #bbdefb; }
         @media (max-width: 900px) { .layout { flex-direction: column; } .left-panel, .right-panel { width: 100%; } }
+        .internal-helper { font-size: 11px; color: #666; margin-top: 4px; font-style: italic; }
         @media print {
+            .internal-helper { display: none !important; }
             .ev-item[data-ac-units-empty="true"] { display: none !important; }
             .ev-item[data-awareness-meetings-empty="true"] { display: none !important; }
             #certificate-generator, #certificate-preview-container { display: none !important; }
@@ -110,6 +112,7 @@
             <div class="input-row"><label>Equipment & furniture (Rs):</label><input type="number" id="inv_equipment" min="0" placeholder="0"></div>
             <div class="input-row"><label>Interior & boards/signage (Rs):</label><input type="number" id="inv_signage" min="0" placeholder="0"></div>
             <div class="input-row"><label>Short note on interior work (HOMA Clinic):</label><textarea id="inv_interiorNote" rows="2" placeholder="Complete turnkey interior for HOMA Clinic (ceilings, partitions, pharmacy and lab furniture, reception, electrical and painting) as per attached quotation (approx. Rs. 17.2 lakh)."></textarea></div>
+            <div class="input-row"><label>Real clinic photos note (optional):</label><textarea id="clinicPhotosNote" rows="2" placeholder="HOMA Clinic photos (exterior board, interior) showing professional setup before closure. Physical prints in court file if needed."></textarea></div>
             <div class="input-row"><label>Hospital software & IT (Rs):</label><input type="number" id="inv_software" min="0" placeholder="0"></div>
             <div class="input-row"><label>Initial medicine stock (Rs):</label><input type="number" id="inv_medicine" min="0" placeholder="0"></div>
             <div class="input-row"><label><strong>Total Investment (Rs):</strong></label><input type="number" id="inv_total" readonly placeholder="Auto-calculated"></div>
@@ -298,6 +301,28 @@
             <div class="input-row"><label>OTS Amount (Rs):</label><input type="number" id="loan_otsAmt" readonly placeholder="Auto"></div>
             <div class="input-row"><label>Savings (Rs):</label><input type="number" id="loan_savings" readonly placeholder="Auto"></div>
 
+            <div class="section-title">3B. EMI Payment Tracker (Post-Closure Interest = Loss Evidence)</div>
+            <p class="note-small">Track monthly EMI payments showing Principal + Interest breakdown. <strong>Post-closure interest payments prove financial burden and good faith for OTS.</strong></p>
+            <div class="input-row"><button type="button" class="btn" id="btnAddEmiRow">Add EMI Payment Row</button></div>
+            <table class="month-table" id="emiTrackerTable">
+                <thead><tr><th>Month/Year</th><th>Principal (Rs)</th><th>Interest (Rs)</th><th>Total EMI (Rs)</th><th>Status</th><th></th></tr></thead>
+                <tbody id="emiTrackerTableBody"></tbody>
+                <tfoot>
+                    <tr>
+                        <td><strong>Total</strong></td>
+                        <td id="totEmiPrincipal">0</td>
+                        <td id="totEmiInterest" style="color:#d32f2f;font-weight:bold;">0</td>
+                        <td id="totEmi">0</td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr style="background:#fff3e0;">
+                        <td colspan="2"><strong>Post-Closure Interest Paid (Loss)</strong></td>
+                        <td colspan="4" id="postClosureInterest" style="color:#d32f2f;font-weight:bold;font-size:14px;">Rs 0</td>
+                    </tr>
+                </tfoot>
+            </table>
+
             <div class="section-title">4. Tax & Compliance Costs</div>
             <div class="input-row"><label>IT Returns (FY22-23):</label><input type="checkbox" id="tax_fy22"> Filed <input type="file" id="tax_file22" accept=".pdf,.jpg,.png" style="font-size:11px"></div>
             <div class="input-row"><label>IT Returns (FY23-24):</label><input type="checkbox" id="tax_fy23"> Filed <input type="file" id="tax_file23" accept=".pdf,.jpg,.png" style="font-size:11px"></div>
@@ -430,6 +455,7 @@
                 { id: 'software', label: 'Hospital software licence/invoice' },
                 { id: 'interior', label: 'Interior/renovation bills' },
                 { id: 'interior_quote', label: 'Interior quotation / bill (HOMA Clinic)', accept: '.pdf,.jpg,.jpeg,.png,.csv', help: 'Example: HOMA Clinic turnkey interior quote around Rs. 17,20,349 (ceilings, partitions, pharmacy/lab/reception furniture, bathroom, electrical, doors, painting). Photos of completed interior can be added later for court/legal pack (not required for OTS emails).' },
+                { id: 'clinicPhotos', label: 'Real clinic photos (exterior/interior, before closure)', multiFile: true, internalHelp: 'Upload digital copies here. Keep color prints in physical evidence folder for court if requested. Proves clinic existed and was professionally set up.' },
                 { id: 'ac_units', label: 'AC Units Installation', help: 'Upload AC quotation/invoice (Sri Mani Ent.), UPI payments, transport bill, installed photos for HOMA Clinic setup costs (~₹3L, Oct 2023). Hidden in print if empty.', hasDescription: true }
             ],
             cat3: [
@@ -443,7 +469,8 @@
                 { id: 'utilityBills', label: 'Electricity/phone/internet bills' },
                 { id: 'equipmentAdvances', label: 'Equipment advances (fans, AC, chairs, fridge, beds)' },
                 { id: 'pharmaMarketingReceipts', label: 'Pharma/marketing dues and receipts' },
-                { id: 'cashOnlineReceipts', label: 'Cash bills/online receipts' }
+                { id: 'cashOnlineReceipts', label: 'Cash bills/online receipts' },
+                { id: 'emiBankStatements', label: 'EMI bank statements (monthly debits)', multiFile: true, internalHelp: 'Upload bank statements showing EMI debits. Post-closure EMI interest payments prove financial burden and good faith for OTS.' }
             ],
             cat4: [
                 { id: 'digital_mkt', label: 'Digital marketing bills (Google Ads, social media)' },
@@ -508,6 +535,7 @@
                     '<div class="file-row">File' + (it.multiFile ? 's' : '') + ': <input type="file" id="file_' + fid + '" ' + fileInputAttrs + 'accept="' + acceptVal + '" style="font-size:11px;max-width:200px;"> <span id="fn_' + fid + '" style="color:#666;"></span></div>' +
                     (it.hasDescription ? '<div class="file-row" style="margin-top:4px;">Description: <input type="text" id="desc_' + fid + '" placeholder="' + (it.descriptionPlaceholder || 'Short description') + '" style="font-size:11px;max-width:300px;flex:1;"></div>' : '') +
                     (it.help ? '<div class="note-small">' + it.help + '</div>' : '') +
+                    (it.internalHelp ? '<div class="internal-helper note-small">' + it.internalHelp + '</div>' : '') +
                     '</div>';
             });
             container.innerHTML = html;
@@ -823,6 +851,51 @@
                 recalcMonths();
             });
             recalcMonths();
+        }
+
+        function addEmiRow() {
+            var tbody = document.getElementById('emiTrackerTableBody');
+            if (!tbody) return;
+            var tr = document.createElement('tr');
+            tr.className = 'emi-tracker-row';
+            var statusOpts = '<option value="">--</option><option value="Pre-Closure">Pre-Closure</option><option value="Post-Closure">Post-Closure (Loss)</option>';
+            tr.innerHTML = '<td><input type="text" class="emi-month" placeholder="e.g. Feb-2023" size="10"></td>' +
+                '<td><input type="number" class="emi-principal" min="0" placeholder="0" size="8"></td>' +
+                '<td><input type="number" class="emi-interest" min="0" placeholder="0" size="8"></td>' +
+                '<td class="emi-total">0</td>' +
+                '<td><select class="emi-status" style="width:100%;">' + statusOpts + '</select></td>' +
+                '<td><button type="button" class="btn" style="padding:2px 6px;font-size:11px;" data-remove>Remove</button></td>';
+            tbody.appendChild(tr);
+            tr.querySelectorAll('.emi-principal, .emi-interest').forEach(function(inp) {
+                inp.addEventListener('input', recalcEmiTracker);
+            });
+            tr.querySelector('.emi-status').addEventListener('change', recalcEmiTracker);
+            tr.querySelector('[data-remove]').addEventListener('click', function() {
+                tr.remove();
+                recalcEmiTracker();
+            });
+            recalcEmiTracker();
+        }
+
+        function recalcEmiTracker() {
+            var rows = document.querySelectorAll('#emiTrackerTableBody tr.emi-tracker-row');
+            var totPrincipal = 0, totInterest = 0, totEmi = 0, postClosureInterest = 0;
+            rows.forEach(function(tr) {
+                var principal = parseFloat(tr.querySelector('.emi-principal') && tr.querySelector('.emi-principal').value) || 0;
+                var interest = parseFloat(tr.querySelector('.emi-interest') && tr.querySelector('.emi-interest').value) || 0;
+                var status = (tr.querySelector('.emi-status') && tr.querySelector('.emi-status').value) || '';
+                var total = principal + interest;
+                totPrincipal += principal;
+                totInterest += interest;
+                totEmi += total;
+                if (status === 'Post-Closure') postClosureInterest += interest;
+                var totalEl = tr.querySelector('.emi-total');
+                if (totalEl) totalEl.textContent = total.toLocaleString();
+            });
+            var tp = document.getElementById('totEmiPrincipal'); if (tp) tp.textContent = totPrincipal.toLocaleString();
+            var ti = document.getElementById('totEmiInterest'); if (ti) ti.textContent = totInterest.toLocaleString();
+            var te = document.getElementById('totEmi'); if (te) te.textContent = totEmi.toLocaleString();
+            var pc = document.getElementById('postClosureInterest'); if (pc) pc.textContent = 'Rs ' + postClosureInterest.toLocaleString();
         }
 
         function addAssetDebtRow(rowData) {
@@ -1295,6 +1368,7 @@
             });
             investment.total = getNum('inv_total');
             investment.interiorNote = getVal('inv_interiorNote');
+            investment.clinicPhotosNote = getVal('clinicPhotosNote');
             investment.govtFeesTotal = getNum('govtFeesTotal');
             investment.runningExpenses = {
                 electricity: getNum('running_electricity'),
@@ -1325,6 +1399,21 @@
                 otsAmount: getNum('loan_otsAmt'),
                 savings: getNum('loan_savings')
             };
+
+            var emiTrackerData = [];
+            var totEmiPrincipal = 0, totEmiInterest = 0, postClosureInterest = 0;
+            document.querySelectorAll('#emiTrackerTableBody tr.emi-tracker-row').forEach(function(tr) {
+                var month = (tr.querySelector('.emi-month') && tr.querySelector('.emi-month').value) || '';
+                var principal = parseFloat(tr.querySelector('.emi-principal') && tr.querySelector('.emi-principal').value) || 0;
+                var interest = parseFloat(tr.querySelector('.emi-interest') && tr.querySelector('.emi-interest').value) || 0;
+                var status = (tr.querySelector('.emi-status') && tr.querySelector('.emi-status').value) || '';
+                if (month || principal || interest) {
+                    emiTrackerData.push({ month: month, principal: principal, interest: interest, totalEmi: principal + interest, status: status });
+                    totEmiPrincipal += principal;
+                    totEmiInterest += interest;
+                    if (status === 'Post-Closure') postClosureInterest += interest;
+                }
+            });
 
             var taxCompliance = {
                 itReturnsFiled: { fy22: getChecked('tax_fy22'), fy23: getChecked('tax_fy23'), fy24: getChecked('tax_fy24') },
@@ -1457,6 +1546,8 @@
                 monthlyLosses: monthlyLosses,
                 cumulativeLoss: cumulativeLoss,
                 loanHistory: loanHistory,
+                emiTrackerData: emiTrackerData,
+                emiTrackerTotals: { totalPrincipal: totEmiPrincipal, totalInterest: totEmiInterest, postClosureInterest: postClosureInterest },
                 taxCompliance: taxCompliance,
                 legalCosts: legalCosts,
                 healthExpenses: healthExpenses,
@@ -1564,6 +1655,10 @@
                             var e = document.getElementById('inv_interiorNote');
                             if (e) e.value = inv.interiorNote || '';
                         }
+                        if (inv.clinicPhotosNote != null) {
+                            var e = document.getElementById('clinicPhotosNote');
+                            if (e) e.value = inv.clinicPhotosNote || '';
+                        }
                         if (inv.govtFeesTotal != null) {
                             var e = document.getElementById('govtFeesTotal');
                             if (e) e.value = inv.govtFeesTotal;
@@ -1666,6 +1761,9 @@
             if (data.hardshipNoPensionNote) lines.push('Hardship No Pension,Note,' + (data.hardshipNoPensionNote || '').replace(/,/g,';').replace(/\n/g,' '));
             lines.push('Investment,Total,' + (data.investment && data.investment.total));
             if (data.investment && data.investment.interiorNote) lines.push('Investment,Interior note,' + (data.investment.interiorNote || '').replace(/,/g,';').replace(/\n/g,' '));
+            if (data.investment && data.investment.clinicPhotosNote) lines.push('Evidence,Clinic photos note,' + (data.investment.clinicPhotosNote || '').replace(/,/g,';').replace(/\n/g,' '));
+            var cpEv = data.evidenceChecklist && data.evidenceChecklist.clinicPhotos;
+            if (cpEv && (cpEv.checked || cpEv.fileName)) lines.push('Evidence,Clinic photos uploaded,' + (cpEv.fileName || '').replace(/,/g,';'));
             if (data.investment && data.investment.govtFeesTotal != null) lines.push('Expenses,Govt Fees,' + data.investment.govtFeesTotal);
             if (data.investment && data.investment.runningExpenses) {
                 var re = data.investment.runningExpenses;
@@ -1730,6 +1828,13 @@
                     lines.push('Monthly Loss,' + m.month + ',' + m.totalExpense + ',' + m.totalIncome + ',' + m.netLoss + ',' + (m.notes||'').replace(/,/g,';'));
                 });
             }
+            if (data.emiTrackerData && data.emiTrackerData.length) {
+                lines.push('EMI Tracker,Total Interest Paid (Rs),' + (data.emiTrackerTotals && data.emiTrackerTotals.totalInterest || 0));
+                lines.push('EMI Tracker,Post-Closure Interest (Loss) (Rs),' + (data.emiTrackerTotals && data.emiTrackerTotals.postClosureInterest || 0));
+                data.emiTrackerData.forEach(function(e) {
+                    lines.push('EMI Payment,' + (e.month||'').replace(/,/g,';') + ',' + e.principal + ',' + e.interest + ',' + e.totalEmi + ',' + (e.status||'').replace(/,/g,';'));
+                });
+            }
             var blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
             var a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
@@ -1757,6 +1862,10 @@ html += '<p>Account: ' + (data.accountNumber || '—') + ' | Outstanding: Rs ' +
                     if (runSum > 0) html += '<p>Running Expenses: Rs ' + runSum.toLocaleString() + ' (Electricity/Phone/Internet: ' + (re.electricity || 0).toLocaleString() + ', Advances: ' + (re.advances || 0).toLocaleString() + ', Equipment: ' + (re.equipment || 0).toLocaleString() + ')</p>';
                 }
                 if (inv.expensesNote) html += '<p><strong>Expenses note:</strong> ' + (inv.expensesNote || '').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>') + '</p>';
+                var cpNote = inv.clinicPhotosNote || '';
+                var cpEv = data.evidenceChecklist && data.evidenceChecklist.clinicPhotos;
+                var cpFile = (cpEv && cpEv.fileName) ? cpEv.fileName : '';
+                if (cpNote || cpFile) html += '<p><strong>Clinic Photos:</strong> ' + (cpNote ? cpNote.replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,' ') : '') + (cpNote && cpFile ? ', ' : '') + (cpFile ? 'Attached – ' + cpFile.replace(/</g,'&lt;') : '') + '</p>';
             }
             html += '<h2>Monthly Revenue & Losses</h2>';
             html += '<table border="1" cellpadding="4" style="border-collapse:collapse;width:100%;"><tr><th>Month</th><th>Revenue</th><th>Expenses</th><th>Net P/L</th></tr>';
@@ -1764,6 +1873,17 @@ html += '<p>Account: ' + (data.accountNumber || '—') + ' | Outstanding: Rs ' +
                 html += '<tr><td>' + (m.month||'') + '</td><td>' + m.revenue + '</td><td>' + m.expenses + '</td><td>' + (m.netProfitLoss||0) + '</td></tr>';
             });
             html += '</table>';
+            if (data.emiTrackerData && data.emiTrackerData.length) {
+                html += '<h2>EMI Payment Tracker (Post-Closure Interest = Loss Evidence)</h2>';
+                html += '<p style="color:#d32f2f;font-weight:bold;">Post-Closure Interest Paid (Loss): Rs ' + (data.emiTrackerTotals && data.emiTrackerTotals.postClosureInterest || 0).toLocaleString() + '</p>';
+                html += '<table border="1" cellpadding="4" style="border-collapse:collapse;width:100%;margin-top:8px;"><tr><th>Month</th><th>Principal (Rs)</th><th>Interest (Rs)</th><th>Total EMI (Rs)</th><th>Status</th></tr>';
+                data.emiTrackerData.forEach(function(e) {
+                    var statusColor = (e.status === 'Post-Closure') ? 'color:#d32f2f;font-weight:bold;' : '';
+                    html += '<tr><td>' + (e.month||'') + '</td><td>' + e.principal.toLocaleString() + '</td><td style="' + statusColor + '">' + e.interest.toLocaleString() + '</td><td>' + e.totalEmi.toLocaleString() + '</td><td style="' + statusColor + '">' + (e.status||'') + '</td></tr>';
+                });
+                html += '<tr style="background:#f5f5f5;font-weight:bold;"><td>Total</td><td>' + (data.emiTrackerTotals && data.emiTrackerTotals.totalPrincipal || 0).toLocaleString() + '</td><td style="color:#d32f2f;">' + (data.emiTrackerTotals && data.emiTrackerTotals.totalInterest || 0).toLocaleString() + '</td><td>' + ((data.emiTrackerTotals && data.emiTrackerTotals.totalPrincipal || 0) + (data.emiTrackerTotals && data.emiTrackerTotals.totalInterest || 0)).toLocaleString() + '</td><td></td></tr>';
+                html += '</table>';
+            }
             if (data.monthlyLosses && data.monthlyLosses.length) {
                 html += '<h2>Monthly Clinic Expenses (Rent Excluded)</h2>';
                 html += '<p style="color:#666;font-size:12px;">Track Feb 2024-Oct 2024 (running losses) + Nov 2024-Feb 2026 (closure losses). EXCLUDE RENT. Shows ₹ outflow from Dr. Nehru\'s pocket monthly.</p>';
@@ -1785,7 +1905,7 @@ html += '<p>Account: ' + (data.accountNumber || '—') + ' | Outstanding: Rs ' +
                 Object.keys(data.evidenceChecklist).forEach(function(k) {
                     var v = data.evidenceChecklist[k];
                     if (v.checked) {
-                        var label = (k === 'interior_quote') ? 'Interior quotation/bill' : k;
+                        var label = (k === 'interior_quote') ? 'Interior quotation/bill' : (k === 'clinicPhotos') ? 'Real clinic photos' : k;
                         var desc = (v.description && v.description.trim()) ? ' – ' + v.description.replace(/</g,'&lt;').replace(/>/g,'&gt;') : '';
                         html += '<li>' + label + ' – Attached: ' + (v.fileName || '(file)') + desc + '</li>';
                     }
@@ -1909,6 +2029,8 @@ html += '<p>Account: ' + (data.accountNumber || '—') + ' | Outstanding: Rs ' +
             });
             document.getElementById('btnAddMonth').addEventListener('click', addMonthRow);
             addMonthRow();
+            document.getElementById('btnAddEmiRow').addEventListener('click', addEmiRow);
+            addEmiRow();
             document.getElementById('btnAddAssetDebt').addEventListener('click', function() { addAssetDebtRow(); });
             addAssetDebtRow();
             document.getElementById('btnAddMonthlyLossRow').addEventListener('click', addMonthlyLossRow);
