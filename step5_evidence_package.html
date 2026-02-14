@@ -124,6 +124,10 @@
             <div class="input-row"><label>Furniture/Equipment (fans, AC, chairs, stools):</label><input type="number" id="running_equipment" min="0" placeholder="0"></div>
             <div class="input-row"><label>Note on expenses (receipts attached):</label><textarea id="expensesNote" rows="2" placeholder="Online receipts, cash bills, pharma dues, equipment advances, etc."></textarea></div>
 
+            <div class="section-title" style="margin-top:12px;">Online infra &amp; hosting (optional)</div>
+            <div class="input-row"><label>Online infra &amp; hosting (Vercel / Supabase / Railway etc.) (Rs, approx total):</label><input type="number" id="onlineInfraTotal" min="0" placeholder="e.g. 5,000"></div>
+            <div class="input-row"><label>Short note on online infra bills (optional):</label><textarea id="onlineInfraNote" rows="2" placeholder="Example: After closing HOMA Clinic in Oct 2024, I still paid Vercel, Supabase and Railway hosting bills to keep medical tools and records online. These are genuine business/OTS expenses, not personal luxury."></textarea></div>
+
             <div class="section-title" style="margin-top:20px;">Monthly Clinic Loss Calculator (Rent Excluded)</div>
             <div style="padding:12px;background:#f9f9f9;border:1px solid #ddd;border-radius:4px;margin-bottom:12px;">
                 <p style="font-size:12px;margin:0 0 8px 0;color:#666;">Track Feb 2024-Oct 2024 (running losses) + Nov 2024-Feb 2026 (closure losses). EXCLUDE RENT. Shows ₹ outflow from Dr. Nehru's pocket monthly.</p>
@@ -286,6 +290,26 @@
                 <tbody id="monthTableBody"></tbody>
                 <tfoot><tr><td><strong>Total</strong></td><td id="totRevenue">0</td><td id="totExpenses">0</td><td id="totNet">0</td><td></td></tr></tfoot>
             </table>
+
+            <div class="section-title" style="margin-top:16px;">LoanLens 12‑Month Cashflow Summary (optional)</div>
+            <p class="note-small">Narrative/evidence only. Not fed into Grand Total Losses or other calculators.</p>
+            <table class="month-table" id="monthlyLensTable">
+                <thead>
+                    <tr>
+                        <th>Month/Year</th>
+                        <th>Real Income / Net Cashflow (Rs)</th>
+                        <th>EMI &amp; Loans (Rs)</th>
+                        <th>Rent (Rs)</th>
+                        <th>Other Expenses (Rs)</th>
+                        <th>Net Result (Rs)</th>
+                    </tr>
+                </thead>
+                <tbody id="monthlyLensTableBody"></tbody>
+            </table>
+            <div class="input-row" style="margin-top:10px;">
+                <label>12‑month hardship note (optional):</label>
+                <textarea id="monthlyLensNote" rows="3" placeholder="Example: Across 12 months, EMIs and expenses were consistently higher than real income; some months required new borrowing just to pay EMIs."></textarea>
+            </div>
 
             <div class="section-title">3. Loan Payment History (Current Lender)</div>
             <div class="input-row"><label>Lender Name:</label><input type="text" id="loan_lender" placeholder="e.g. HDFC, Bajaj Finance"></div>
@@ -470,13 +494,15 @@
                 { id: 'equipmentAdvances', label: 'Equipment advances (fans, AC, chairs, fridge, beds)' },
                 { id: 'pharmaMarketingReceipts', label: 'Pharma/marketing dues and receipts' },
                 { id: 'cashOnlineReceipts', label: 'Cash bills/online receipts' },
-                { id: 'emiBankStatements', label: 'EMI bank statements (monthly debits)', multiFile: true, internalHelp: 'Upload bank statements showing EMI debits. Post-closure EMI interest payments prove financial burden and good faith for OTS.' }
+                { id: 'emiBankStatements', label: 'EMI bank statements (monthly debits)', multiFile: true, internalHelp: 'Upload bank statements showing EMI debits. Post-closure EMI interest payments prove financial burden and good faith for OTS.' },
+                { id: 'loanLensPack', label: 'LoanLens monthly cashflow PDFs (Feb 2024 – Jan 2025)', internalHelp: 'Optional: Combined PDF of 12 LoanLens monthly reports showing income vs EMI & expenses for each month.' }
             ],
             cat4: [
                 { id: 'digital_mkt', label: 'Digital marketing bills (Google Ads, social media)' },
                 { id: 'print_ads', label: 'Print ads / pamphlets' },
                 { id: 'website', label: 'Website development invoice' },
-                { id: 'awareness_meetings', label: 'Awareness Meetings & Flyers', help: 'Proves business promotion efforts; request certs from hosts for endorsement.', hasDescription: true, multiFile: true, descriptionPlaceholder: 'Upload flyers, Zoom invites, certificates from 30+ events (Adoni, Rajahmundry, diabetes talks). Counts as marketing spend.' }
+                { id: 'awareness_meetings', label: 'Awareness Meetings & Flyers', help: 'Proves business promotion efforts; request certs from hosts for endorsement.', hasDescription: true, multiFile: true, descriptionPlaceholder: 'Upload flyers, Zoom invites, certificates from 30+ events (Adoni, Rajahmundry, diabetes talks). Counts as marketing spend.' },
+                { id: 'onlineInfraReceipts', label: 'Online infra receipts (Vercel / Supabase / Railway)', multiFile: true, internalHelp: 'Optional: Upload hosting/database receipts showing online clinic/OTS tools. Treated as small support expenses.' }
             ],
             cat5: [
                 { id: 'dmho_closure', label: 'DMHO clinic closure request letter (signed)' },
@@ -606,6 +632,65 @@
                     evItem.removeAttribute('data-awareness-meetings-empty');
                 }
             }
+        }
+
+        var MONTHLY_LENS_DEFAULT_MONTHS = ['Feb 2024','Mar 2024','Apr 2024','May 2024','Jun 2024','Jul 2024','Aug 2024','Sep 2024','Oct 2024','Nov 2024','Dec 2024','Jan 2025'];
+        function initMonthlyLensTable() {
+            var tbody = document.getElementById('monthlyLensTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            for (var i = 0; i < 12; i++) {
+                var tr = document.createElement('tr');
+                tr.setAttribute('data-lens-index', i);
+                tr.innerHTML = '<td><input type="text" id="monthlyLens_' + i + '_month" class="monthlyLens-month" value="' + (MONTHLY_LENS_DEFAULT_MONTHS[i] || '') + '" style="width:90px;"></td>' +
+                    '<td><input type="number" id="monthlyLens_' + i + '_income" class="monthlyLens-income" min="0" step="1" placeholder="0" style="width:80px;"></td>' +
+                    '<td><input type="number" id="monthlyLens_' + i + '_emi" class="monthlyLens-emi" min="0" step="1" placeholder="0" style="width:80px;"></td>' +
+                    '<td><input type="number" id="monthlyLens_' + i + '_rent" class="monthlyLens-rent" min="0" step="1" placeholder="0" style="width:80px;"></td>' +
+                    '<td><input type="number" id="monthlyLens_' + i + '_other" class="monthlyLens-other" min="0" step="1" placeholder="0" style="width:80px;"></td>' +
+                    '<td id="monthlyLens_' + i + '_net" class="monthlyLens-net" style="min-width:70px;font-weight:500;">0</td>';
+                tbody.appendChild(tr);
+                (function(idx) {
+                    var incomeEl = document.getElementById('monthlyLens_' + idx + '_income');
+                    var emiEl = document.getElementById('monthlyLens_' + idx + '_emi');
+                    var rentEl = document.getElementById('monthlyLens_' + idx + '_rent');
+                    var otherEl = document.getElementById('monthlyLens_' + idx + '_other');
+                    var netEl = document.getElementById('monthlyLens_' + idx + '_net');
+                    function updateNet() {
+                        if (!netEl) return;
+                        var income = parseFloat(incomeEl && incomeEl.value) || 0;
+                        var emi = parseFloat(emiEl && emiEl.value) || 0;
+                        var rent = parseFloat(rentEl && rentEl.value) || 0;
+                        var other = parseFloat(otherEl && otherEl.value) || 0;
+                        var net = income - (emi + rent + other);
+                        netEl.textContent = net.toLocaleString('en-IN');
+                        netEl.style.color = net < 0 ? '#d32f2f' : '';
+                    }
+                    if (incomeEl) incomeEl.addEventListener('input', updateNet);
+                    if (emiEl) emiEl.addEventListener('input', updateNet);
+                    if (rentEl) rentEl.addEventListener('input', updateNet);
+                    if (otherEl) otherEl.addEventListener('input', updateNet);
+                    updateNet();
+                })(i);
+            }
+        }
+        function collectMonthlyLensData() {
+            var arr = [];
+            for (var i = 0; i < 12; i++) {
+                var income = getNum('monthlyLens_' + i + '_income');
+                var emi = getNum('monthlyLens_' + i + '_emi');
+                var rent = getNum('monthlyLens_' + i + '_rent');
+                var other = getNum('monthlyLens_' + i + '_other');
+                var net = income - (emi + rent + other);
+                arr.push({
+                    month: getVal('monthlyLens_' + i + '_month') || (MONTHLY_LENS_DEFAULT_MONTHS[i] || ''),
+                    income: income,
+                    emi: emi,
+                    rent: rent,
+                    other: other,
+                    net: net
+                });
+            }
+            return arr;
         }
 
         window._certificateCounter = 1;
@@ -1535,6 +1620,10 @@
                 });
             });
 
+            var monthlyLens = collectMonthlyLensData();
+            var monthlyLensNote = getVal('monthlyLensNote');
+            var expenses = { onlineInfraTotal: getNum('onlineInfraTotal'), onlineInfraNote: getVal('onlineInfraNote') };
+
             return {
                 exportedAt: new Date().toISOString(),
                 lenderName: loanHistory.lenderName,
@@ -1542,9 +1631,12 @@
                 previousPracticeNote: getVal('previousPracticeNote'),
                 hardshipNoPensionNote: getVal('hardshipNoPensionNote'),
                 investment: investment,
+                expenses: expenses,
                 monthlyData: monthlyData,
                 monthlyLosses: monthlyLosses,
                 cumulativeLoss: cumulativeLoss,
+                monthlyLens: monthlyLens,
+                monthlyLensNote: monthlyLensNote,
                 loanHistory: loanHistory,
                 emiTrackerData: emiTrackerData,
                 emiTrackerTotals: { totalPrincipal: totEmiPrincipal, totalInterest: totEmiInterest, postClosureInterest: postClosureInterest },
@@ -1674,6 +1766,10 @@
                             if (e) e.value = inv.expensesNote || '';
                         }
                     }
+                    if (data.expenses) {
+                        var e1 = document.getElementById('onlineInfraTotal'); if (e1) e1.value = data.expenses.onlineInfraTotal != null ? data.expenses.onlineInfraTotal : '';
+                        var e2 = document.getElementById('onlineInfraNote'); if (e2) e2.value = data.expenses.onlineInfraNote || '';
+                    }
                     if (data.majorAssetSale) {
                         var mas = data.majorAssetSale;
                         var set = function(id, v) { var e = document.getElementById(id); if (e && v != null && v !== '') e.value = v; };
@@ -1707,6 +1803,23 @@
                             }
                         });
                     }
+                    if (data.monthlyLens && data.monthlyLens.length) {
+                        for (var i = 0; i < 12 && i < data.monthlyLens.length; i++) {
+                            var m = data.monthlyLens[i];
+                            var monthEl = document.getElementById('monthlyLens_' + i + '_month'); if (monthEl) monthEl.value = m.month != null ? m.month : '';
+                            var incomeEl = document.getElementById('monthlyLens_' + i + '_income'); if (incomeEl) incomeEl.value = m.income != null ? m.income : '';
+                            var emiEl = document.getElementById('monthlyLens_' + i + '_emi'); if (emiEl) emiEl.value = m.emi != null ? m.emi : '';
+                            var rentEl = document.getElementById('monthlyLens_' + i + '_rent'); if (rentEl) rentEl.value = m.rent != null ? m.rent : '';
+                            var otherEl = document.getElementById('monthlyLens_' + i + '_other'); if (otherEl) otherEl.value = m.other != null ? m.other : '';
+                            var netEl = document.getElementById('monthlyLens_' + i + '_net');
+                            if (netEl) {
+                                var net = (m.income || 0) - ((m.emi || 0) + (m.rent || 0) + (m.other || 0));
+                                netEl.textContent = net.toLocaleString('en-IN');
+                                netEl.style.color = net < 0 ? '#d32f2f' : '';
+                            }
+                        }
+                    }
+                    if (data.monthlyLensNote != null) { var mnEl = document.getElementById('monthlyLensNote'); if (mnEl) mnEl.value = data.monthlyLensNote; }
                     if (data.certificates && data.certificates.length) {
                         window._generatedCertificates = data.certificates;
                         var container = document.getElementById('certificate-forms-container');
@@ -1772,6 +1885,10 @@
                 if (re.advances != null) lines.push('Expenses,Pharma/Marketing,' + re.advances);
             }
             if (data.investment && data.investment.expensesNote) lines.push('Expenses,Cash Receipts note,' + (data.investment.expensesNote || '').replace(/,/g,';').replace(/\n/g,' '));
+            if (data.expenses) {
+                lines.push('Expenses,Online infra & hosting (Rs),' + (data.expenses.onlineInfraTotal || 0));
+                if (data.expenses.onlineInfraNote) lines.push('Expenses,Online infra note,' + (data.expenses.onlineInfraNote || '').replace(/,/g,';').replace(/\n/g,' '));
+            }
             if (data.monthlyData) data.monthlyData.forEach(function(m) {
                 lines.push('Monthly,' + (m.month||'').replace(/,/g,';') + ',' + m.revenue + ',' + m.expenses + ',' + (m.netProfitLoss||0));
             });
@@ -1828,6 +1945,15 @@
                     lines.push('Monthly Loss,' + m.month + ',' + m.totalExpense + ',' + m.totalIncome + ',' + m.netLoss + ',' + (m.notes||'').replace(/,/g,';'));
                 });
             }
+            if (data.monthlyLens && data.monthlyLens.length) {
+                lines.push('LoanLens 12-Month Summary,Month,Income,EMI & Loans,Rent,Other,Net');
+                data.monthlyLens.forEach(function(m) {
+                    lines.push('LoanLens Month,' + (m.month||'').replace(/,/g,';') + ',' + (m.income||0) + ',' + (m.emi||0) + ',' + (m.rent||0) + ',' + (m.other||0) + ',' + (m.net||0));
+                });
+            }
+            if (data.monthlyLensNote) {
+                lines.push('LoanLens 12-month hardship note,' + (data.monthlyLensNote || '').replace(/,/g,';').replace(/\n/g,' '));
+            }
             if (data.emiTrackerData && data.emiTrackerData.length) {
                 lines.push('EMI Tracker,Total Interest Paid (Rs),' + (data.emiTrackerTotals && data.emiTrackerTotals.totalInterest || 0));
                 lines.push('EMI Tracker,Post-Closure Interest (Loss) (Rs),' + (data.emiTrackerTotals && data.emiTrackerTotals.postClosureInterest || 0));
@@ -1862,6 +1988,13 @@ html += '<p>Account: ' + (data.accountNumber || '—') + ' | Outstanding: Rs ' +
                     if (runSum > 0) html += '<p>Running Expenses: Rs ' + runSum.toLocaleString() + ' (Electricity/Phone/Internet: ' + (re.electricity || 0).toLocaleString() + ', Advances: ' + (re.advances || 0).toLocaleString() + ', Equipment: ' + (re.equipment || 0).toLocaleString() + ')</p>';
                 }
                 if (inv.expensesNote) html += '<p><strong>Expenses note:</strong> ' + (inv.expensesNote || '').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>') + '</p>';
+            }
+            if (data.expenses && (data.expenses.onlineInfraTotal > 0 || (data.expenses.onlineInfraNote && data.expenses.onlineInfraNote.trim()))) {
+                html += '<p><strong>Online infra &amp; hosting (Vercel/Supabase/Railway):</strong> Rs ' + (data.expenses.onlineInfraTotal || 0).toLocaleString() + '</p>';
+                if (data.expenses.onlineInfraNote && data.expenses.onlineInfraNote.trim()) html += '<p><strong>Note:</strong> ' + (data.expenses.onlineInfraNote || '').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>') + '</p>';
+            }
+            if (data.investment) {
+                var inv = data.investment;
                 var cpNote = inv.clinicPhotosNote || '';
                 var cpEv = data.evidenceChecklist && data.evidenceChecklist.clinicPhotos;
                 var cpFile = (cpEv && cpEv.fileName) ? cpEv.fileName : '';
@@ -1900,10 +2033,30 @@ html += '<p>Account: ' + (data.accountNumber || '—') + ' | Outstanding: Rs ' +
                 html += '</table>';
                 html += '<p style="margin-top:12px;font-weight:bold;color:#d32f2f;">Cumulative Loss (Feb24-Feb26): ₹' + (data.cumulativeLoss || 0).toLocaleString('en-IN') + '</p>';
             }
+            if (data.monthlyLens && data.monthlyLens.length) {
+                html += '<h2>LoanLens 12-Month Cashflow Summary</h2>';
+                html += '<table border="1" cellpadding="4" style="border-collapse:collapse;width:100%;font-size:11px;margin-top:8px;"><tr style="background:#f5f5f5;"><th>Month/Year</th><th>Income (Rs)</th><th>EMI &amp; Loans (Rs)</th><th>Rent (Rs)</th><th>Other (Rs)</th><th>Net (Rs)</th></tr>';
+                data.monthlyLens.forEach(function(m) {
+                    html += '<tr><td>' + (m.month||'').replace(/</g,'&lt;') + '</td><td>' + (m.income||0).toLocaleString('en-IN') + '</td><td>' + (m.emi||0).toLocaleString('en-IN') + '</td><td>' + (m.rent||0).toLocaleString('en-IN') + '</td><td>' + (m.other||0).toLocaleString('en-IN') + '</td><td style="' + (m.net < 0 ? 'color:#d32f2f;' : '') + '">' + (m.net||0).toLocaleString('en-IN') + '</td></tr>';
+                });
+                html += '</table>';
+                if (data.monthlyLensNote && data.monthlyLensNote.trim()) {
+                    html += '<p style="margin-top:10px;"><strong>12-month hardship note:</strong> ' + (data.monthlyLensNote || '').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>') + '</p>';
+                }
+            }
             html += '<h2>Evidence Checklist</h2><ul>';
             if (data.evidenceChecklist) {
                 Object.keys(data.evidenceChecklist).forEach(function(k) {
                     var v = data.evidenceChecklist[k];
+                    if (k === 'loanLensPack') {
+                        html += '<li>LoanLens monthly cashflow PDFs: ' + (v.checked || v.fileName ? 'Attached' : 'Not attached') + ' – ' + (v.fileName || '').replace(/</g,'&lt;') + '</li>';
+                        return;
+                    }
+                    if (k === 'onlineInfraReceipts') {
+                        var fileNames = (v.fileName || (v.fileList && v.fileList.length ? v.fileList.join(', ') : '')).replace(/</g,'&lt;');
+                        html += '<li>Online infra receipts: ' + (v.checked || v.fileName || (v.fileList && v.fileList.length) ? 'Attached' : 'Not attached') + ' – ' + fileNames + '</li>';
+                        return;
+                    }
                     if (v.checked) {
                         var label = (k === 'interior_quote') ? 'Interior quotation/bill' : (k === 'clinicPhotos') ? 'Real clinic photos' : k;
                         var desc = (v.description && v.description.trim()) ? ' – ' + v.description.replace(/</g,'&lt;').replace(/>/g,'&gt;') : '';
@@ -2027,6 +2180,7 @@ html += '<p>Account: ' + (data.accountNumber || '—') + ' | Outstanding: Rs ' +
                     navigator.clipboard.writeText(ta.value).then(function() { alert('Copied to clipboard.'); }).catch(function() {});
                 }
             });
+            initMonthlyLensTable();
             document.getElementById('btnAddMonth').addEventListener('click', addMonthRow);
             addMonthRow();
             document.getElementById('btnAddEmiRow').addEventListener('click', addEmiRow);
